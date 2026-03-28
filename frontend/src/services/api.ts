@@ -26,7 +26,7 @@ class ApiService {
     this.client = axios.create({
       baseURL: `${API_BASE}/api/v1`,
       headers: { 'Content-Type': 'application/json' },
-      timeout: 30000,
+      timeout: 90000, // 90 seconds — Render free tier cold start can take 50s
     });
 
     // Request interceptor — attach access token
