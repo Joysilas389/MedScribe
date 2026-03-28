@@ -136,5 +136,5 @@ export function isMobile(): boolean {
  * Check if MediaRecorder API is available.
  */
 export function isRecordingSupported(): boolean {
-  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+  return typeof navigator.mediaDevices !== 'undefined' && typeof navigator.mediaDevices.getUserMedia === 'function' && typeof MediaRecorder !== 'undefined';
 }
