@@ -7,8 +7,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import type { Encounter } from '../../types';
 import {
-  Search, Filter, FileText, Clock, CheckCircle2,
-  AlertTriangle, ChevronLeft, ChevronRight, Loader2, Mic
+  Filter, FileText,
+  ChevronLeft, ChevronRight, Loader2, Mic
 } from 'lucide-react';
 import clsx from 'clsx';
 import { formatDistanceToNow } from 'date-fns';

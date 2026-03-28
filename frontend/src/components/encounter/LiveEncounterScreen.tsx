@@ -3,15 +3,15 @@
  * Recording controls, encounter timer, consent capture.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import api from '../../services/api';
 import type { Encounter, EncounterCreateRequest, TranscriptSegment } from '../../types';
 import {
-  Mic, MicOff, Pause, Play, Square, Clock, Wifi, WifiOff,
-  AlertCircle, CheckCircle2, FileText, Loader2, Shield
+  Mic, Pause, Play, Square, Clock, Wifi, WifiOff,
+  AlertCircle, FileText, Loader2, Shield
 } from 'lucide-react';
 import clsx from 'clsx';
 import { SUPPORTED_LANGUAGES } from '../../types';
@@ -26,12 +26,10 @@ export default function LiveEncounterScreen() {
   const [isCreating, setIsCreating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [micSupported, setMicSupported] = useState(true);
 
   // Check browser microphone support on mount
   useEffect(() => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
-      setMicSupported(false);
       setErrorMsg('Your browser does not support audio recording. Please use Chrome, Firefox, or Edge.');
     }
   }, []);
@@ -103,7 +101,7 @@ export default function LiveEncounterScreen() {
     setIsGenerating(true);
     try {
       await api.stopRecording(encounter.id);
-      const note = await api.generateNote(encounter.id);
+      await api.generateNote(encounter.id);
       navigate(`/review/${encounter.id}`);
     } catch (err) {
       setErrorMsg('Note generation failed. You can retry from the encounter history.');

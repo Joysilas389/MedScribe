@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import {
-  LayoutDashboard, Mic, ClipboardList, History, Settings,
+  LayoutDashboard, Mic, History, Settings,
   LogOut, Menu, X, Stethoscope, ChevronRight
 } from 'lucide-react';
 import clsx from 'clsx';
