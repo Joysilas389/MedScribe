@@ -46,6 +46,10 @@ async def register(
         )
     except AuthenticationError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except Exception as e:
+        import logging
+        logging.getLogger("medscribe").error(f"Registration error: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Registration failed: {type(e).__name__}")
 
     # Log registration
     await audit_logger.log(

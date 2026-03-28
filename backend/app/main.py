@@ -48,8 +48,8 @@ app = FastAPI(
     title=config.app_name,
     version=config.app_version,
     description="AI-Powered Ambient Clinical Documentation Platform",
-    docs_url="/docs" if not config.is_production else None,
-    redoc_url="/redoc" if not config.is_production else None,
+    docs_url="/docs",
+    redoc_url="/redoc",
     lifespan=lifespan,
 )
 
@@ -57,13 +57,24 @@ app = FastAPI(
 # --- Middleware ---
 
 # CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=config.cors_origins_list,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+cors_origins = config.cors_origins_list
+if "*" in cors_origins:
+    # Wildcard mode — disable credentials for compatibility
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 # Security headers middleware (HSTS, no-sniff, etc.)
