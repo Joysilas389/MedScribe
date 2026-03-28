@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-slate-50 text-slate-800 font-sans;
+  }
+  ::selection {
+    @apply bg-teal-200 text-teal-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 
+           bg-teal-600 text-white font-medium rounded-xl
+           hover:bg-teal-700 active:bg-teal-800
+           transition-all duration-200 ease-out
+           focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5
+           bg-white text-slate-700 font-medium rounded-xl
+           border border-slate-200
+           hover:bg-slate-50 hover:border-slate-300 active:bg-slate-100
+           transition-all duration-200 ease-out
+           focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5
+           bg-red-600 text-white font-medium rounded-xl
+           hover:bg-red-700 active:bg-red-800
+           transition-all duration-200 ease-out
+           focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+  }
+  .btn-icon {
+    @apply inline-flex items-center justify-center p-2.5
+           rounded-xl text-slate-500
+           hover:bg-slate-100 hover:text-slate-700
+           transition-colors duration-150
+           focus:outline-none focus:ring-2 focus:ring-slate-300;
+  }
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border border-slate-200 bg-white
+           text-slate-800 placeholder:text-slate-400
+           focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500
+           transition-all duration-200;
+  }
+  .card {
+    @apply bg-white rounded-2xl border border-slate-200/80 shadow-sm;
+  }
+  .card-hover {
+    @apply card hover:shadow-md hover:border-slate-300 transition-all duration-200 cursor-pointer;
+  }
+  .section-header {
+    @apply text-xs font-semibold uppercase tracking-wider text-teal-700 mb-2;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-teal {
+    @apply badge bg-teal-100 text-teal-800;
+  }
+  .badge-amber {
+    @apply badge bg-amber-100 text-amber-800;
+  }
+  .badge-red {
+    @apply badge bg-red-100 text-red-800;
+  }
+  .badge-green {
+    @apply badge bg-emerald-100 text-emerald-800;
+  }
+  .badge-slate {
+    @apply badge bg-slate-100 text-slate-700;
+  }
+
+  /* Note section editor */
+  .note-section {
+    @apply p-4 rounded-xl border border-slate-200 bg-white;
+  }
+  .note-section-missing {
+    @apply note-section border-dashed border-amber-300 bg-amber-50/50;
+  }
+  .note-section-uncertain {
+    @apply note-section border-amber-400 bg-amber-50/30;
+  }
+  .note-section-locked {
+    @apply note-section bg-slate-50 cursor-not-allowed opacity-75;
+  }
+
+  /* AI disclaimer banner */
+  .ai-disclaimer {
+    @apply flex items-center gap-3 p-3 rounded-xl 
+           bg-amber-50 border border-amber-200 text-amber-800 text-sm;
+  }
+
+  /* Recording indicator */
+  .recording-dot {
+    @apply w-3 h-3 rounded-full bg-red-500 animate-recording-pulse;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400;
+}
+
+/* Print styles for PDF preview */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
