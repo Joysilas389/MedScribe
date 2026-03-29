@@ -147,55 +147,56 @@ export default function ReviewEditScreen() {
   const isLocked = note.status === 'locked' || note.status === 'signed_off';
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Top bar */}
-      <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-4 no-print">
-        <button onClick={() => navigate('/dashboard')} className="btn-icon">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold text-slate-800">Review Clinical Note</h1>
-          <p className="text-xs text-slate-500">Version {note.current_version} • {note.status.replace('_', ' ')}</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button onClick={loadVersions} className="btn-secondary py-2 px-3 text-sm">
-            <History className="w-4 h-4" /> Versions
+      <div className="bg-white border-b border-slate-200 px-4 py-3 no-print flex-shrink-0">
+        <div className="flex items-center gap-3 mb-2">
+          <button onClick={() => navigate('/dashboard')} className="btn-icon flex-shrink-0">
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <button onClick={handleExportPdf} disabled={exporting} className="btn-secondary py-2 px-3 text-sm">
-            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Export PDF
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-semibold text-slate-800">Review Clinical Note</h1>
+            <p className="text-xs text-slate-500">Version {note.current_version} • {note.status.replace('_', ' ')}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={loadVersions} className="btn-secondary py-1.5 px-3 text-xs">
+            <History className="w-3.5 h-3.5" /> Versions
+          </button>
+          <button onClick={handleExportPdf} disabled={exporting} className="btn-secondary py-1.5 px-3 text-xs">
+            {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            PDF
           </button>
           {!isLocked && (
-            <button onClick={() => setShowSignOffConfirm(true)} className="btn-primary py-2 px-4 text-sm">
-              <CheckCircle2 className="w-4 h-4" /> Sign Off
+            <button onClick={() => setShowSignOffConfirm(true)} className="btn-primary py-1.5 px-3 text-xs ml-auto">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Sign Off
             </button>
           )}
           {isLocked && (
-            <span className="badge-green flex items-center gap-1.5 py-1.5 px-3">
-              <Lock className="w-3.5 h-3.5" /> Signed &amp; Locked
+            <span className="badge-green flex items-center gap-1 py-1 px-2 text-xs ml-auto">
+              <Lock className="w-3 h-3" /> Signed
             </span>
           )}
         </div>
       </div>
 
       {error && (
-        <div className="mx-6 mt-3 ai-disclaimer">
-          <AlertCircle className="w-4 h-4 text-red-500" />
-          <span className="text-red-700">{error}</span>
-          <button onClick={() => setError('')} className="ml-auto"><X className="w-4 h-4" /></button>
+        <div className="mx-4 mt-3 flex items-center gap-2 p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex-shrink-0">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span className="flex-1">{error}</span>
+          <button onClick={() => setError('')}><X className="w-4 h-4" /></button>
         </div>
       )}
 
       {/* AI Disclaimer */}
-      <div className="mx-6 mt-4 ai-disclaimer">
+      <div className="mx-4 mt-3 flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex-shrink-0">
         <AlertTriangle className="w-4 h-4 flex-shrink-0" />
         <span>{note.ai_disclaimer}</span>
       </div>
 
       {/* Note sections */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-4xl mx-auto space-y-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+        <div className="max-w-4xl mx-auto space-y-3">
           {(Object.keys(NOTE_SECTION_LABELS) as NoteSectionKey[]).map((key) => {
             const label = NOTE_SECTION_LABELS[key];
             const content = note[key];

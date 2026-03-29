@@ -130,3 +130,9 @@
     display: none !important;
   }
 }
+
+/* Prevent horizontal overflow on mobile */
+body, #root {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
