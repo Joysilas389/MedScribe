@@ -26,6 +26,7 @@ export default function LiveEncounterScreen() {
   const [isCreating, setIsCreating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [activeTab, setActiveTab] = useState<'transcript' | 'preview'>('transcript');
 
   // Check browser microphone support on mount
   useEffect(() => {
@@ -149,13 +150,36 @@ export default function LiveEncounterScreen() {
               <select value={formData.specialty_template}
                       onChange={(e) => setFormData((f) => ({ ...f, specialty_template: e.target.value }))}
                       className="input-field">
-                <option value="general_practice">General Practice</option>
+                <option value="general_practice">General Practice / Family Medicine</option>
+                <option value="internal_medicine">Internal Medicine</option>
                 <option value="emergency_medicine">Emergency Medicine</option>
                 <option value="pediatrics">Pediatrics</option>
-                <option value="surgery">Surgery</option>
+                <option value="surgery">General Surgery</option>
+                <option value="orthopedics">Orthopedics</option>
+                <option value="obstetrics_gynecology">Obstetrics & Gynecology</option>
                 <option value="psychiatry">Psychiatry</option>
                 <option value="cardiology">Cardiology</option>
+                <option value="neurology">Neurology</option>
+                <option value="pulmonology">Pulmonology</option>
+                <option value="gastroenterology">Gastroenterology</option>
+                <option value="nephrology">Nephrology</option>
+                <option value="endocrinology">Endocrinology</option>
+                <option value="dermatology">Dermatology</option>
+                <option value="ophthalmology">Ophthalmology</option>
+                <option value="ent">ENT / Otolaryngology</option>
+                <option value="urology">Urology</option>
                 <option value="oncology">Oncology</option>
+                <option value="hematology">Hematology</option>
+                <option value="rheumatology">Rheumatology</option>
+                <option value="infectious_disease">Infectious Disease</option>
+                <option value="anesthesiology">Anesthesiology</option>
+                <option value="radiology">Radiology</option>
+                <option value="pathology">Pathology</option>
+                <option value="palliative_care">Palliative Care</option>
+                <option value="rehabilitation">Physical Medicine & Rehab</option>
+                <option value="sports_medicine">Sports Medicine</option>
+                <option value="geriatrics">Geriatrics</option>
+                <option value="neonatology">Neonatology</option>
                 <option value="telemedicine">Telemedicine</option>
               </select>
             </div>
@@ -214,28 +238,28 @@ export default function LiveEncounterScreen() {
   return (
     <div className="flex flex-col h-full">
       {/* Top bar — recording controls */}
-      <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-4 no-print">
+      <div className="bg-white border-b border-slate-200 px-3 py-2 flex flex-wrap items-center gap-2 sm:gap-4 no-print">
         {/* Status indicator */}
         <div className="flex items-center gap-2">
           {recState.isRecording && !recState.isPaused && <div className="recording-dot" />}
           <span className={clsx(
-            'text-sm font-medium',
+            'text-xs sm:text-sm font-medium',
             recState.isRecording && !recState.isPaused ? 'text-red-600' : 'text-slate-600'
           )}>
             {recState.isRecording
               ? recState.isPaused ? 'Paused' : 'Recording'
-              : isGenerating ? 'Generating Note...' : 'Ready'}
+              : isGenerating ? 'Generating...' : 'Ready'}
           </span>
         </div>
 
         {/* Timer */}
-        <div className="flex items-center gap-1.5 text-sm font-mono text-slate-600">
-          <Clock className="w-4 h-4" />
+        <div className="flex items-center gap-1.5 text-xs sm:text-sm font-mono text-slate-600">
+          <Clock className="w-3.5 h-3.5" />
           {formatTime(recState.elapsedSeconds)}
         </div>
 
         {/* Connection */}
-        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+        <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500">
           {recState.isConnected ? (
             <><Wifi className="w-3.5 h-3.5 text-emerald-500" /> Connected</>
           ) : (
@@ -244,10 +268,10 @@ export default function LiveEncounterScreen() {
         </div>
 
         {/* Encounter ID */}
-        <span className="badge-slate text-xs ml-auto">{encounter.encounter_id}</span>
+        <span className="hidden sm:inline badge-slate text-xs ml-auto">{encounter.encounter_id}</span>
 
         {/* Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-auto sm:ml-0">
           {!recState.isRecording ? (
             <button onClick={handleStartRecording} className="btn-primary py-2 px-4 text-sm" disabled={isGenerating}>
               <Mic className="w-4 h-4" /> Start
@@ -288,12 +312,41 @@ export default function LiveEncounterScreen() {
         </div>
       )}
 
-      {/* Split panels */}
-      <div className="flex-1 flex overflow-hidden">
+      {/* Split panels — stacked on mobile, side-by-side on desktop */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* Mobile tab switcher */}
+        <div className="lg:hidden flex border-b border-slate-200 bg-white">
+          <button
+            onClick={() => setActiveTab('transcript')}
+            className={clsx(
+              'flex-1 py-3 text-sm font-medium text-center border-b-2 transition-colors',
+              activeTab === 'transcript'
+                ? 'border-teal-600 text-teal-700'
+                : 'border-transparent text-slate-500'
+            )}
+          >
+            Transcript ({segments.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('preview')}
+            className={clsx(
+              'flex-1 py-3 text-sm font-medium text-center border-b-2 transition-colors',
+              activeTab === 'preview'
+                ? 'border-teal-600 text-teal-700'
+                : 'border-transparent text-slate-500'
+            )}
+          >
+            Note Preview
+          </button>
+        </div>
+
         {/* Left — Transcript */}
-        <div className="w-1/2 border-r border-slate-200 flex flex-col">
-          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-            <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+        <div className={clsx(
+          'lg:w-1/2 border-r border-slate-200 flex flex-col',
+          activeTab === 'transcript' ? 'flex-1' : 'hidden lg:flex'
+        )}>
+          <div className="hidden lg:flex px-4 py-3 bg-slate-50 border-b border-slate-200">
+            <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2 w-full">
               <FileText className="w-4 h-4" />
               Live Transcript
               <span className="badge-slate ml-auto">{segments.length} segments</span>
@@ -330,9 +383,12 @@ export default function LiveEncounterScreen() {
         </div>
 
         {/* Right — Live Note Preview (dynamically built from transcript) */}
-        <div className="w-1/2 flex flex-col">
-          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-            <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+        <div className={clsx(
+          'lg:w-1/2 flex flex-col',
+          activeTab === 'preview' ? 'flex-1' : 'hidden lg:flex'
+        )}>
+          <div className="hidden lg:flex px-4 py-3 bg-slate-50 border-b border-slate-200">
+            <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2 w-full">
               <ClipboardIcon className="w-4 h-4" />
               Live Note Preview
               {segments.length > 0 && (

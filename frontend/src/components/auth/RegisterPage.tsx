@@ -82,13 +82,31 @@ export default function RegisterPage() {
                 <select id="specialty" value={form.specialty} onChange={(e) => update('specialty', e.target.value)}
                         className="input-field">
                   <option>General Practice</option>
+                  <option>Internal Medicine</option>
                   <option>Emergency Medicine</option>
                   <option>Pediatrics</option>
                   <option>Surgery</option>
+                  <option>Obstetrics & Gynecology</option>
                   <option>Psychiatry</option>
                   <option>Cardiology</option>
+                  <option>Neurology</option>
+                  <option>Pulmonology</option>
+                  <option>Gastroenterology</option>
+                  <option>Nephrology</option>
+                  <option>Endocrinology</option>
+                  <option>Dermatology</option>
+                  <option>Ophthalmology</option>
+                  <option>ENT / Otolaryngology</option>
+                  <option>Urology</option>
                   <option>Oncology</option>
-                  <option>Internal Medicine</option>
+                  <option>Orthopedics</option>
+                  <option>Rheumatology</option>
+                  <option>Infectious Disease</option>
+                  <option>Anesthesiology</option>
+                  <option>Radiology</option>
+                  <option>Palliative Care</option>
+                  <option>Geriatrics</option>
+                  <option>Sports Medicine</option>
                   <option>Other</option>
                 </select>
               </div>
