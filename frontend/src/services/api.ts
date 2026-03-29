@@ -185,8 +185,8 @@ class ApiService {
     return data;
   }
 
-  async submitManualTranscript(encounterId: string, text: string): Promise<void> {
-    await this.client.post(`/encounters/${encounterId}/manual-transcript`, { text });
+  async submitManualTranscript(encounterId: string, text: string, encounterMode?: string): Promise<void> {
+    await this.client.post(`/encounters/${encounterId}/manual-transcript`, { text, encounter_mode: encounterMode });
   }
 
   // --- Note ---
