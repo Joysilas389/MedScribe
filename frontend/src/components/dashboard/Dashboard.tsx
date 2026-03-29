@@ -108,18 +108,18 @@ export default function Dashboard() {
       </div>
 
       {/* Quick-start card */}
-      <div className="card p-6 mb-8 bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-200/60">
-        <div className="flex items-center gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-teal-600 flex items-center justify-center shadow-lg shadow-teal-600/20">
-            <Mic className="w-7 h-7 text-white" />
+      <div className="card p-5 sm:p-6 mb-8 bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-200/60">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-teal-600 flex items-center justify-center shadow-lg shadow-teal-600/20 flex-shrink-0">
+            <Mic className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-slate-800">Start a New Encounter</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-slate-800">Start a New Encounter</h3>
             <p className="text-sm text-slate-600 mt-0.5">
-              Begin recording a clinical conversation. MedScribe will transcribe and generate structured notes automatically.
+              Begin recording a clinical conversation. MedScribe will transcribe and generate structured notes.
             </p>
           </div>
-          <button onClick={handleNewEncounter} className="btn-primary">
+          <button onClick={handleNewEncounter} className="btn-primary w-full sm:w-auto flex-shrink-0">
             Start Recording
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -163,24 +163,28 @@ export default function Dashboard() {
                       navigate(`/encounter/${encounter.id}`);
                     }
                   }}
-                  className="card-hover p-4 flex items-center gap-4"
+                  className="card-hover p-4"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-slate-500" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-5 h-5 text-slate-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-800 truncate">
+                        {encounter.encounter_id}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">
+                        {encounter.specialty_template.replace(/_/g, ' ')} • {formatDuration(encounter.duration_seconds)}
+                      </p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0 hidden sm:block" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-800">
-                      {encounter.encounter_id}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {encounter.specialty_template.replace('_', ' ')} • {formatDuration(encounter.duration_seconds)}
-                    </p>
+                  <div className="flex items-center gap-2 mt-2 ml-13 pl-[52px]">
+                    <span className={clsx(cfg.color)}>{cfg.label}</span>
+                    <span className="text-xs text-slate-400">
+                      {formatDistanceToNow(new Date(encounter.created_at), { addSuffix: true })}
+                    </span>
                   </div>
-                  <span className={clsx(cfg.color)}>{cfg.label}</span>
-                  <span className="text-xs text-slate-400">
-                    {formatDistanceToNow(new Date(encounter.created_at), { addSuffix: true })}
-                  </span>
-                  <ArrowRight className="w-4 h-4 text-slate-300" />
                 </div>
               );
             })}

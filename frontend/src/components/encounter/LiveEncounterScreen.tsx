@@ -313,7 +313,7 @@ export default function LiveEncounterScreen() {
       )}
 
       {/* Split panels — stacked on mobile, side-by-side on desktop */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
         {/* Mobile tab switcher */}
         <div className="lg:hidden flex border-b border-slate-200 bg-white">
           <button
@@ -445,6 +445,8 @@ const NOTE_PREVIEW_SECTIONS = [
   { key: 'symptoms', label: 'Symptoms / HPI' },
   { key: 'medications', label: 'Medications' },
   { key: 'allergies', label: 'Allergies' },
+  { key: 'nutritional_history', label: 'Nutritional History' },
+  { key: 'immunization_history', label: 'Immunization History' },
   { key: 'exam_findings', label: 'Examination Findings' },
   { key: 'assessment', label: 'Assessment' },
   { key: 'plan', label: 'Plan' },
@@ -457,6 +459,8 @@ const SECTION_KEYWORDS: Record<string, RegExp> = {
   symptoms: /(?:pain|ache|fever|cough|nausea|vomit|diarrhea|fatigue|weakness|dizz|headache|shortness|swelling|rash|itch|numb|bleed|weight\s+(?:loss|gain)|insomnia|anxiety|depression|palpitation)/i,
   medications: /(?:taking|prescri|started|dose|mg|mcg|units?\b|tablets?|pills?|medication)/i,
   allergies: /(?:allerg|react(?:ion)?)/i,
+  nutritional_history: /(?:diet|nutrition|eat(?:ing)?|appetite|meal|food|weight|bmi|feeding|breastfeed|formula|vitamin|supplement|malnutrition|obese|obesity)/i,
+  immunization_history: /(?:vaccin|immuniz|shot|booster|dose|mmr|dpt|polio|bcg|hepatitis|tetanus|flu\s+shot|covid\s+vaccine|hpv)/i,
   exam_findings: /(?:exam|palpat|auscultat|inspect|normal|abnormal|tender|swollen|clear|murmur|blood\s+pressure|bp\b|heart\s+rate|pulse|temperature)/i,
   assessment: /(?:diagnos|assessment|impression|suspect|consistent|likely|differential|rule\s+out)/i,
   plan: /(?:prescri|order|refer|start|increase|decrease|discontinue|recommend)/i,

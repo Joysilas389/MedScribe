@@ -58,6 +58,11 @@ STRICT RULES — VIOLATIONS ARE UNACCEPTABLE:
    - allergies (with reaction types where mentioned)
    - family_history
    - social_history
+   - nutritional_history (diet, appetite, feeding, BMI, supplements)
+   - immunization_history (vaccines, boosters, immunization records)
+   - developmental_history (milestones, growth — for pediatric encounters)
+   - gynecological_history (menstrual, contraception, screening — for OB/GYN)
+   - obstetric_history (pregnancies, deliveries, complications — for OB/GYN)
    - review_of_systems (organized by organ system as a JSON object)
    - physical_examination (organized by system as a JSON object)
    - assessment
@@ -276,6 +281,11 @@ Transform the above into a polished, professional clinical note following all ru
             "allergies": raw_sections.get("allergies", "[NOT DISCUSSED]"),
             "family_history": raw_sections.get("family_history", "[NOT DISCUSSED]"),
             "social_history": raw_sections.get("social_history", "[NOT DISCUSSED]"),
+            "nutritional_history": raw_sections.get("nutritional_history", "[NOT DISCUSSED]"),
+            "immunization_history": raw_sections.get("immunization_history", "[NOT DISCUSSED]"),
+            "developmental_history": raw_sections.get("developmental_history", "[NOT DISCUSSED]"),
+            "gynecological_history": raw_sections.get("gynecological_history", "[NOT DISCUSSED]"),
+            "obstetric_history": raw_sections.get("obstetric_history", "[NOT DISCUSSED]"),
             "review_of_systems": {},
             "physical_examination": {},
             "assessment": raw_sections.get("assessment", "[NOT DISCUSSED]"),

@@ -140,6 +140,11 @@ class ClinicalNoteResponse(BaseModel):
     allergies: str
     family_history: str
     social_history: str
+    nutritional_history: str = ""
+    immunization_history: str = ""
+    developmental_history: str = ""
+    gynecological_history: str = ""
+    obstetric_history: str = ""
     review_of_systems: Dict[str, Any]
     physical_examination: Dict[str, Any]
     assessment: str
@@ -168,8 +173,10 @@ class NoteEditRequest(BaseModel):
     def validate_section(cls, v: str) -> str:
         valid_sections = {
             "chief_complaint", "hpi", "past_medical_history", "medications",
-            "allergies", "family_history", "social_history", "review_of_systems",
-            "physical_examination", "assessment", "plan", "follow_up"
+            "allergies", "family_history", "social_history",
+            "nutritional_history", "immunization_history",
+            "developmental_history", "gynecological_history", "obstetric_history",
+            "review_of_systems", "physical_examination", "assessment", "plan", "follow_up"
         }
         if v not in valid_sections:
             raise ValueError(f"Invalid section: {v}. Must be one of: {valid_sections}")

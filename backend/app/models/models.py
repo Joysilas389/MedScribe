@@ -142,6 +142,11 @@ class ClinicalNote(Base):
     allergies = Column(Text, default="")
     family_history = Column(Text, default="")
     social_history = Column(Text, default="")
+    nutritional_history = Column(Text, default="")
+    immunization_history = Column(Text, default="")
+    developmental_history = Column(Text, default="")  # Pediatrics/Neonatology
+    gynecological_history = Column(Text, default="")  # OB/GYN
+    obstetric_history = Column(Text, default="")  # OB/GYN
     review_of_systems = Column(JSON, default=dict)  # Organized by organ system
     physical_examination = Column(JSON, default=dict)  # Organized by system
     assessment = Column(Text, default="")

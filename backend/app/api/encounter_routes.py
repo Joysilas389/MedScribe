@@ -277,8 +277,10 @@ async def generate_note(
         # Update existing
         for key in [
             "chief_complaint", "hpi", "past_medical_history", "medications",
-            "allergies", "family_history", "social_history", "assessment",
-            "plan", "follow_up"
+            "allergies", "family_history", "social_history",
+            "nutritional_history", "immunization_history",
+            "developmental_history", "gynecological_history", "obstetric_history",
+            "assessment", "plan", "follow_up"
         ]:
             setattr(existing_note, key, polished.get(key, ""))
         existing_note.review_of_systems = polished.get("review_of_systems", {})
@@ -297,6 +299,11 @@ async def generate_note(
             allergies=polished.get("allergies", ""),
             family_history=polished.get("family_history", ""),
             social_history=polished.get("social_history", ""),
+            nutritional_history=polished.get("nutritional_history", ""),
+            immunization_history=polished.get("immunization_history", ""),
+            developmental_history=polished.get("developmental_history", ""),
+            gynecological_history=polished.get("gynecological_history", ""),
+            obstetric_history=polished.get("obstetric_history", ""),
             review_of_systems=polished.get("review_of_systems", {}),
             physical_examination=polished.get("physical_examination", {}),
             assessment=polished.get("assessment", ""),
@@ -621,6 +628,11 @@ def _note_to_response(note: ClinicalNote) -> ClinicalNoteResponse:
         allergies=note.allergies,
         family_history=note.family_history,
         social_history=note.social_history,
+        nutritional_history=note.nutritional_history or "",
+        immunization_history=note.immunization_history or "",
+        developmental_history=note.developmental_history or "",
+        gynecological_history=note.gynecological_history or "",
+        obstetric_history=note.obstetric_history or "",
         review_of_systems=note.review_of_systems or {},
         physical_examination=note.physical_examination or {},
         assessment=note.assessment,
@@ -645,6 +657,11 @@ def _note_to_snapshot(note: ClinicalNote) -> dict:
         "allergies": note.allergies,
         "family_history": note.family_history,
         "social_history": note.social_history,
+        "nutritional_history": note.nutritional_history or "",
+        "immunization_history": note.immunization_history or "",
+        "developmental_history": note.developmental_history or "",
+        "gynecological_history": note.gynecological_history or "",
+        "obstetric_history": note.obstetric_history or "",
         "review_of_systems": note.review_of_systems,
         "physical_examination": note.physical_examination,
         "assessment": note.assessment,

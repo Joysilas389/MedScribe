@@ -73,6 +73,11 @@ class ClinicalNLPService:
             "diagnoses": self._extract_diagnoses(clinical_sentences),
             "family_history_mentions": self._extract_family_history(clinical_sentences),
             "social_history_mentions": self._extract_social_history(clinical_sentences),
+            "nutritional_history_mentions": self._extract_nutritional_history(clinical_sentences),
+            "immunization_mentions": self._extract_immunization_history(clinical_sentences),
+            "developmental_mentions": self._extract_developmental_history(clinical_sentences),
+            "gynecological_mentions": self._extract_gynecological_history(clinical_sentences),
+            "obstetric_mentions": self._extract_obstetric_history(clinical_sentences),
             "exam_findings": self._extract_exam_findings(clinical_sentences),
             "plan_items": self._extract_plan_items(clinical_sentences),
             "follow_up": self._extract_follow_up(clinical_sentences),
@@ -100,6 +105,11 @@ class ClinicalNLPService:
             "allergies": "\n".join(entities.get("allergies", [])),
             "family_history": "\n".join(entities.get("family_history_mentions", [])),
             "social_history": "\n".join(entities.get("social_history_mentions", [])),
+            "nutritional_history": "\n".join(entities.get("nutritional_history_mentions", [])),
+            "immunization_history": "\n".join(entities.get("immunization_mentions", [])),
+            "developmental_history": "\n".join(entities.get("developmental_mentions", [])),
+            "gynecological_history": "\n".join(entities.get("gynecological_mentions", [])),
+            "obstetric_history": "\n".join(entities.get("obstetric_mentions", [])),
             "review_of_systems": self._build_ros(entities),
             "physical_examination": self._build_exam(entities),
             "assessment": "\n".join(entities.get("diagnoses", [])),
@@ -227,6 +237,31 @@ class ClinicalNLPService:
         """Extract follow-up instructions."""
         fu_pattern = r'\b(?:follow.?up|return|come back|weeks?|months?|call if|warning signs?|emergency|er |urgent)\b'
         return [s.strip() for s in sentences if re.search(fu_pattern, s.lower())]
+
+    def _extract_nutritional_history(self, sentences: List[str]) -> List[str]:
+        """Extract nutritional history mentions."""
+        pattern = r'\b(?:diet|nutrition|eat(?:ing)?|appetite|meal|food|weight|bmi|feed(?:ing)?|breastfeed|formula|vitamin|supplement|malnutrition|obese|obesity|calorie|protein|carb)\b'
+        return [s.strip() for s in sentences if re.search(pattern, s.lower())]
+
+    def _extract_immunization_history(self, sentences: List[str]) -> List[str]:
+        """Extract immunization history mentions."""
+        pattern = r'\b(?:vaccin|immuniz|shot|booster|mmr|dpt|dtap|polio|bcg|hepatitis|tetanus|flu\s+shot|covid\s+vaccin|hpv|pneumo|meningo|rotavirus|varicella)\b'
+        return [s.strip() for s in sentences if re.search(pattern, s.lower())]
+
+    def _extract_developmental_history(self, sentences: List[str]) -> List[str]:
+        """Extract developmental history for pediatrics/neonatology."""
+        pattern = r'\b(?:develop|milestone|crawl|walk|talk|speech|language|motor|cognitive|growth|percentile|head circumference|apgar|gestational|preterm|premature|birth weight)\b'
+        return [s.strip() for s in sentences if re.search(pattern, s.lower())]
+
+    def _extract_gynecological_history(self, sentences: List[str]) -> List[str]:
+        """Extract gynecological history for OB/GYN."""
+        pattern = r'\b(?:menstr|period|cycle|menarche|menopause|pap smear|cervical|ovarian|uterine|fibroid|endometri|pcos|contracepti|iud|birth control|mammogram|breast)\b'
+        return [s.strip() for s in sentences if re.search(pattern, s.lower())]
+
+    def _extract_obstetric_history(self, sentences: List[str]) -> List[str]:
+        """Extract obstetric history for OB/GYN."""
+        pattern = r'\b(?:pregnan|gravida|para|trimester|delivery|cesarean|c-section|labor|contraction|fetal|ultrasound|prenatal|postnatal|postpartum|miscarriage|abortion|ectopic|preeclampsia|gestational diabetes)\b'
+        return [s.strip() for s in sentences if re.search(pattern, s.lower())]
 
     @staticmethod
     def _split_into_sentences(text: str) -> List[str]:

@@ -109,6 +109,11 @@ export interface ClinicalNote {
   allergies: string;
   family_history: string;
   social_history: string;
+  nutritional_history: string;
+  immunization_history: string;
+  developmental_history: string;
+  gynecological_history: string;
+  obstetric_history: string;
   review_of_systems: Record<string, string>;
   physical_examination: Record<string, string>;
   assessment: string;
@@ -187,6 +192,11 @@ export type NoteSectionKey =
   | 'allergies'
   | 'family_history'
   | 'social_history'
+  | 'nutritional_history'
+  | 'immunization_history'
+  | 'developmental_history'
+  | 'gynecological_history'
+  | 'obstetric_history'
   | 'review_of_systems'
   | 'physical_examination'
   | 'assessment'
@@ -201,6 +211,11 @@ export const NOTE_SECTION_LABELS: Record<NoteSectionKey, string> = {
   allergies: 'Allergies',
   family_history: 'Family History',
   social_history: 'Social History',
+  nutritional_history: 'Nutritional History',
+  immunization_history: 'Immunization History',
+  developmental_history: 'Developmental History',
+  gynecological_history: 'Gynecological History',
+  obstetric_history: 'Obstetric History',
   review_of_systems: 'Review of Systems',
   physical_examination: 'Physical Examination',
   assessment: 'Assessment',
