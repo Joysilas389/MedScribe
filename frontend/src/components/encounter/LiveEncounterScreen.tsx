@@ -73,10 +73,12 @@ export default function LiveEncounterScreen() {
   const [errorMsg, setErrorMsg] = useState('');
   const [activeTab, setActiveTab] = useState<'manual' | 'transcript' | 'preview'>('manual');
   const [manualTranscript, setManualTranscript] = useState('');
+  const [encounterMode, setEncounterMode] = useState<'regular' | 'emergency' | 'trauma'>('regular');
 
   const [formData, setFormData] = useState<EncounterCreateRequest>({
     patient_name: '', patient_dob: '', patient_mrn: '',
     specialty_template: user?.preferred_template || 'general_practice',
+    encounter_type: 'regular',
     spoken_language: 'en',
     output_language: user?.preferred_language || 'en',
   });
@@ -146,7 +148,7 @@ export default function LiveEncounterScreen() {
     setIsGenerating(true);
     setErrorMsg('');
     try {
-      await api.submitManualTranscript(encounter.id, manualTranscript);
+      await api.submitManualTranscript(encounter.id, manualTranscript, encounterMode);
       await api.generateNote(encounter.id);
       navigate(`/review/${encounter.id}`);
     } catch {
@@ -206,6 +208,33 @@ export default function LiveEncounterScreen() {
             </div>
           </div>
 
+          {/* Encounter Type */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Encounter Type</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { value: 'regular', label: 'Regular Clerking', desc: 'Standard clinical encounter' },
+                { value: 'emergency', label: 'Emergency', desc: 'Emergency department encounter' },
+                { value: 'trauma', label: 'Trauma', desc: 'Trauma with primary/secondary survey' },
+              ].map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setFormData(f => ({ ...f, encounter_type: t.value }))}
+                  className={clsx(
+                    'p-3 rounded-xl border text-center transition-all text-sm',
+                    formData.encounter_type === t.value
+                      ? 'border-teal-500 bg-teal-50 text-teal-700 font-medium'
+                      : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                  )}
+                >
+                  <p className="font-medium text-xs">{t.label}</p>
+                  <p className="text-[10px] mt-0.5 opacity-70">{t.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Spoken Language</label>
@@ -226,6 +255,37 @@ export default function LiveEncounterScreen() {
                   <option key={c} value={c}>{n}</option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          {/* Encounter Mode */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Encounter Mode</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { value: 'regular', label: 'Regular Clerking', desc: 'Standard clinical encounter' },
+                { value: 'emergency', label: 'Emergency', desc: 'Emergency with ABCDE survey' },
+                { value: 'trauma', label: 'Trauma', desc: 'Trauma with primary & secondary survey' },
+              ] as const).map((mode) => (
+                <button
+                  key={mode.value}
+                  type="button"
+                  onClick={() => setEncounterMode(mode.value)}
+                  className={clsx(
+                    'p-3 rounded-xl border-2 text-left transition-all',
+                    encounterMode === mode.value
+                      ? mode.value === 'regular' ? 'border-teal-500 bg-teal-50' : 'border-red-500 bg-red-50'
+                      : 'border-slate-200 hover:border-slate-300'
+                  )}
+                >
+                  <p className={clsx('text-xs font-semibold',
+                    encounterMode === mode.value
+                      ? mode.value === 'regular' ? 'text-teal-700' : 'text-red-700'
+                      : 'text-slate-700'
+                  )}>{mode.label}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">{mode.desc}</p>
+                </button>
+              ))}
             </div>
           </div>
 

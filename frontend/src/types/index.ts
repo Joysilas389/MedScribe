@@ -71,6 +71,7 @@ export interface EncounterCreateRequest {
   patient_dob?: string;
   patient_mrn?: string;
   specialty_template?: string;
+  encounter_type?: string;
   spoken_language?: string;
   output_language?: string;
 }
@@ -104,7 +105,10 @@ export interface ClinicalNote {
   status: NoteStatus;
   chief_complaint: string;
   hpi: string;
+  on_direct_questioning: string;
   past_medical_history: string;
+  past_surgical_history: string;
+  drug_history: string;
   medications: string;
   allergies: string;
   family_history: string;
@@ -116,8 +120,18 @@ export interface ClinicalNote {
   obstetric_history: string;
   review_of_systems: Record<string, string>;
   physical_examination: Record<string, string>;
+  lab_investigations: string;
+  imaging_investigations: string;
+  investigation_comments: string;
+  provisional_diagnosis: string;
+  differential_diagnosis: string;
+  final_diagnosis: string;
   assessment: string;
   plan: string;
+  recommended_plan: string;
+  sbar_summary: string;
+  primary_survey: string;
+  secondary_survey: string;
   follow_up: string;
   missing_sections: string[];
   uncertain_fields: string[];
@@ -187,7 +201,10 @@ export interface RecordingState {
 export type NoteSectionKey =
   | 'chief_complaint'
   | 'hpi'
+  | 'on_direct_questioning'
   | 'past_medical_history'
+  | 'past_surgical_history'
+  | 'drug_history'
   | 'medications'
   | 'allergies'
   | 'family_history'
@@ -199,15 +216,28 @@ export type NoteSectionKey =
   | 'obstetric_history'
   | 'review_of_systems'
   | 'physical_examination'
+  | 'lab_investigations'
+  | 'imaging_investigations'
+  | 'investigation_comments'
+  | 'provisional_diagnosis'
+  | 'differential_diagnosis'
+  | 'final_diagnosis'
   | 'assessment'
   | 'plan'
+  | 'recommended_plan'
+  | 'sbar_summary'
+  | 'primary_survey'
+  | 'secondary_survey'
   | 'follow_up';
 
 export const NOTE_SECTION_LABELS: Record<NoteSectionKey, string> = {
   chief_complaint: 'Chief Complaint',
   hpi: 'History of Present Illness',
+  on_direct_questioning: 'On Direct Questioning',
   past_medical_history: 'Past Medical History',
-  medications: 'Medications',
+  past_surgical_history: 'Past Surgical History',
+  drug_history: 'Drug History',
+  medications: 'Current Medications',
   allergies: 'Allergies',
   family_history: 'Family History',
   social_history: 'Social History',
@@ -218,8 +248,18 @@ export const NOTE_SECTION_LABELS: Record<NoteSectionKey, string> = {
   obstetric_history: 'Obstetric History',
   review_of_systems: 'Review of Systems',
   physical_examination: 'Physical Examination',
+  lab_investigations: 'Laboratory Investigations',
+  imaging_investigations: 'Imaging Investigations',
+  investigation_comments: 'Investigation Comments',
+  provisional_diagnosis: 'Provisional Diagnosis',
+  differential_diagnosis: 'Differential Diagnosis',
+  final_diagnosis: 'Final Diagnosis',
   assessment: 'Assessment',
   plan: 'Plan',
+  recommended_plan: 'Recommended Plan (AI Suggestion)',
+  sbar_summary: 'SBAR Summary',
+  primary_survey: 'Primary Survey (ABCDE)',
+  secondary_survey: 'Secondary Survey',
   follow_up: 'Follow-up Instructions',
 };
 

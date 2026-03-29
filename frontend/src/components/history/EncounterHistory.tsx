@@ -7,7 +7,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import type { Encounter } from '../../types';
 import {
-  Filter, FileText,
+  Filter, FileText, Trash2,
   ChevronLeft, ChevronRight, Loader2, Mic
 } from 'lucide-react';
 import clsx from 'clsx';
@@ -39,6 +39,8 @@ export default function EncounterHistory() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const pageSize = 15;
 
   useEffect(() => {
@@ -53,6 +55,16 @@ export default function EncounterHistory() {
       setTotal(data.total);
     } catch { /* empty state */ }
     finally { setLoading(false); }
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeleting(true);
+    try {
+      await api.deleteEncounter(id);
+      setDeleteId(null);
+      await loadEncounters();
+    } catch { /* ignore */ }
+    finally { setDeleting(false); }
   };
 
   const totalPages = Math.ceil(total / pageSize);
@@ -100,23 +112,14 @@ export default function EncounterHistory() {
         </div>
       ) : (
         <>
-          <div className="card overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Encounter</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Template</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Duration</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Status</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {encounters.map((enc) => {
-                  const badge = STATUS_BADGES[enc.status] || { label: enc.status, class: 'badge-slate' };
-                  return (
-                    <tr
-                      key={enc.id}
+          <div className="space-y-3">
+            {encounters.map((enc) => {
+              const badge = STATUS_BADGES[enc.status] || { label: enc.status, class: 'badge-slate' };
+              return (
+                <div key={enc.id} className="card p-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex-1 min-w-0 cursor-pointer"
                       onClick={() => {
                         if (['pending_review', 'signed_off', 'locked', 'amended'].includes(enc.status)) {
                           navigate(`/review/${enc.id}`);
@@ -124,30 +127,29 @@ export default function EncounterHistory() {
                           navigate(`/encounter/${enc.id}`);
                         }
                       }}
-                      className="hover:bg-slate-50 cursor-pointer transition-colors"
                     >
-                      <td className="px-4 py-3">
-                        <span className="text-sm font-medium text-slate-800">{enc.encounter_id}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-slate-600">{enc.specialty_template.replace(/_/g, ' ')}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-slate-600">{Math.floor(enc.duration_seconds / 60)} min</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={badge.class}>{badge.label}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-slate-500">
-                          {formatDistanceToNow(new Date(enc.created_at), { addSuffix: true })}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      <p className="text-sm font-medium text-slate-800 truncate">{enc.encounter_id}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">
+                        {enc.specialty_template.replace(/_/g, ' ')} • {Math.floor(enc.duration_seconds / 60)} min
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDeleteId(enc.id); }}
+                      className="btn-icon p-1.5 text-slate-400 hover:text-red-500 flex-shrink-0"
+                      aria-label="Delete encounter"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={badge.class}>{badge.label}</span>
+                    <span className="text-xs text-slate-400">
+                      {formatDistanceToNow(new Date(enc.created_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Pagination */}
@@ -176,6 +178,43 @@ export default function EncounterHistory() {
             </div>
           )}
         </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="card p-6 w-full max-w-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-800">Delete Encounter?</h3>
+            </div>
+            <p className="text-sm text-slate-600 mb-5">
+              This will permanently delete this encounter and all associated notes, transcripts, and data.
+              This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="btn-secondary flex-1 py-2 text-sm"
+              >
+                No, Keep It
+              </button>
+              <button
+                onClick={() => deleteId && handleDelete(deleteId)}
+                disabled={deleting}
+                className="btn-danger flex-1 py-2 text-sm"
+              >
+                {deleting ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Deleting...</>
+                ) : (
+                  'Yes, Delete'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -107,6 +107,30 @@ async def get_encounter(
     return _encounter_to_response(encounter)
 
 
+@router.delete("/{encounter_id}")
+async def delete_encounter(
+    encounter_id: str,
+    request: Request,
+    current_user: dict = Depends(require_roles(["physician", "admin"])),
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete an encounter and all related data."""
+    encounter = await _get_encounter_or_404(db, encounter_id, current_user["user_id"])
+
+    await audit_logger.log(
+        db=db,
+        action=audit_logger.ENCOUNTER_DELETED,
+        resource_type="encounter",
+        resource_id=encounter.id,
+        user_id=current_user["user_id"],
+        ip_address=get_client_ip(request),
+    )
+
+    await db.delete(encounter)
+    await db.flush()
+    return {"status": "deleted"}
+
+
 # --- Recording Controls ---
 
 @router.post("/{encounter_id}/pause")
@@ -326,6 +350,7 @@ async def generate_note(
             transcript_text=transcript_text,
             template=encounter.specialty_template,
             output_language=encounter.output_language,
+            encounter_type=getattr(encounter, 'encounter_type', 'regular') or 'regular',
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI processing failed: {str(e)}")
@@ -345,11 +370,14 @@ async def generate_note(
     if existing_note:
         # Update existing
         for key in [
-            "chief_complaint", "hpi", "past_medical_history", "medications",
+            "chief_complaint", "hpi", "on_direct_questioning",
+            "past_medical_history", "past_surgical_history", "drug_history", "medications",
             "allergies", "family_history", "social_history",
             "nutritional_history", "immunization_history",
             "developmental_history", "gynecological_history", "obstetric_history",
-            "assessment", "plan", "follow_up"
+            "lab_investigations", "imaging_investigations", "investigation_comments",
+            "provisional_diagnosis", "differential_diagnosis", "final_diagnosis",
+            "assessment", "plan", "recommended_plan", "sbar_summary", "primary_survey", "secondary_survey", "follow_up"
         ]:
             setattr(existing_note, key, polished.get(key, ""))
         existing_note.review_of_systems = polished.get("review_of_systems", {})
@@ -364,10 +392,13 @@ async def generate_note(
             chief_complaint=polished.get("chief_complaint", ""),
             hpi=polished.get("hpi", ""),
             past_medical_history=polished.get("past_medical_history", ""),
+            past_surgical_history=polished.get("past_surgical_history", ""),
+            drug_history=polished.get("drug_history", ""),
             medications=polished.get("medications", ""),
             allergies=polished.get("allergies", ""),
             family_history=polished.get("family_history", ""),
             social_history=polished.get("social_history", ""),
+            on_direct_questioning=polished.get("on_direct_questioning", ""),
             nutritional_history=polished.get("nutritional_history", ""),
             immunization_history=polished.get("immunization_history", ""),
             developmental_history=polished.get("developmental_history", ""),
@@ -375,8 +406,18 @@ async def generate_note(
             obstetric_history=polished.get("obstetric_history", ""),
             review_of_systems=polished.get("review_of_systems", {}),
             physical_examination=polished.get("physical_examination", {}),
+            lab_investigations=polished.get("lab_investigations", ""),
+            imaging_investigations=polished.get("imaging_investigations", ""),
+            investigation_comments=polished.get("investigation_comments", ""),
+            provisional_diagnosis=polished.get("provisional_diagnosis", ""),
+            differential_diagnosis=polished.get("differential_diagnosis", ""),
+            final_diagnosis=polished.get("final_diagnosis", ""),
             assessment=polished.get("assessment", ""),
             plan=polished.get("plan", ""),
+            recommended_plan=polished.get("recommended_plan", ""),
+            sbar_summary=polished.get("sbar_summary", ""),
+            primary_survey=polished.get("primary_survey", ""),
+            secondary_survey=polished.get("secondary_survey", ""),
             follow_up=polished.get("follow_up", ""),
             missing_sections=polished.get("missing_sections", []),
             uncertain_fields=polished.get("uncertain_fields", []),
@@ -693,10 +734,13 @@ def _note_to_response(note: ClinicalNote) -> ClinicalNoteResponse:
         chief_complaint=note.chief_complaint,
         hpi=note.hpi,
         past_medical_history=note.past_medical_history,
+        past_surgical_history=note.past_surgical_history or "",
+        drug_history=note.drug_history or "",
         medications=note.medications,
         allergies=note.allergies,
         family_history=note.family_history,
         social_history=note.social_history,
+        on_direct_questioning=note.on_direct_questioning or "",
         nutritional_history=note.nutritional_history or "",
         immunization_history=note.immunization_history or "",
         developmental_history=note.developmental_history or "",
@@ -704,8 +748,18 @@ def _note_to_response(note: ClinicalNote) -> ClinicalNoteResponse:
         obstetric_history=note.obstetric_history or "",
         review_of_systems=note.review_of_systems or {},
         physical_examination=note.physical_examination or {},
+        lab_investigations=note.lab_investigations or "",
+        imaging_investigations=note.imaging_investigations or "",
+        investigation_comments=note.investigation_comments or "",
+        provisional_diagnosis=note.provisional_diagnosis or "",
+        differential_diagnosis=note.differential_diagnosis or "",
+        final_diagnosis=note.final_diagnosis or "",
         assessment=note.assessment,
         plan=note.plan,
+        recommended_plan=note.recommended_plan or "",
+        sbar_summary=note.sbar_summary or "",
+        primary_survey=note.primary_survey or "",
+        secondary_survey=note.secondary_survey or "",
         follow_up=note.follow_up,
         missing_sections=note.missing_sections or [],
         uncertain_fields=note.uncertain_fields or [],
@@ -722,10 +776,13 @@ def _note_to_snapshot(note: ClinicalNote) -> dict:
         "chief_complaint": note.chief_complaint,
         "hpi": note.hpi,
         "past_medical_history": note.past_medical_history,
+        "past_surgical_history": note.past_surgical_history or "",
+        "drug_history": note.drug_history or "",
         "medications": note.medications,
         "allergies": note.allergies,
         "family_history": note.family_history,
         "social_history": note.social_history,
+        "on_direct_questioning": note.on_direct_questioning or "",
         "nutritional_history": note.nutritional_history or "",
         "immunization_history": note.immunization_history or "",
         "developmental_history": note.developmental_history or "",
@@ -733,8 +790,18 @@ def _note_to_snapshot(note: ClinicalNote) -> dict:
         "obstetric_history": note.obstetric_history or "",
         "review_of_systems": note.review_of_systems,
         "physical_examination": note.physical_examination,
+        "lab_investigations": note.lab_investigations or "",
+        "imaging_investigations": note.imaging_investigations or "",
+        "investigation_comments": note.investigation_comments or "",
+        "provisional_diagnosis": note.provisional_diagnosis or "",
+        "differential_diagnosis": note.differential_diagnosis or "",
+        "final_diagnosis": note.final_diagnosis or "",
         "assessment": note.assessment,
         "plan": note.plan,
+        "recommended_plan": note.recommended_plan or "",
+        "sbar_summary": note.sbar_summary or "",
+        "primary_survey": note.primary_survey or "",
+        "secondary_survey": note.secondary_survey or "",
         "follow_up": note.follow_up,
         "missing_sections": note.missing_sections,
         "uncertain_fields": note.uncertain_fields,

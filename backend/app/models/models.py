@@ -88,6 +88,7 @@ class Encounter(Base):
     patient_mrn = Column(String(50), default="")  # Medical Record Number, encrypted
     status = Column(Enum(EncounterStatus, native_enum=False), default=EncounterStatus.RECORDING)
     specialty_template = Column(String(50), default="general_practice")
+    encounter_type = Column(String(20), default="regular")  # regular, emergency, trauma
     spoken_language = Column(String(10), default="en")
     output_language = Column(String(10), default="en")
     duration_seconds = Column(Integer, default=0)
@@ -137,7 +138,10 @@ class ClinicalNote(Base):
     # Structured note sections (stored as JSON for flexibility)
     chief_complaint = Column(Text, default="")
     hpi = Column(Text, default="")  # History of Present Illness
+    on_direct_questioning = Column(Text, default="")  # Targeted questions after HPI
     past_medical_history = Column(Text, default="")
+    past_surgical_history = Column(Text, default="")  # Previous surgeries
+    drug_history = Column(Text, default="")  # Detailed drug/substance history
     medications = Column(Text, default="")
     allergies = Column(Text, default="")
     family_history = Column(Text, default="")
@@ -149,8 +153,18 @@ class ClinicalNote(Base):
     obstetric_history = Column(Text, default="")  # OB/GYN
     review_of_systems = Column(JSON, default=dict)  # Organized by organ system
     physical_examination = Column(JSON, default=dict)  # Organized by system
+    lab_investigations = Column(Text, default="")  # Lab results and orders
+    imaging_investigations = Column(Text, default="")  # Imaging results and orders
+    investigation_comments = Column(Text, default="")  # Clinician comments on results
+    provisional_diagnosis = Column(Text, default="")  # Based on history alone
+    differential_diagnosis = Column(Text, default="")  # Differential list
+    final_diagnosis = Column(Text, default="")  # After investigations
     assessment = Column(Text, default="")
     plan = Column(Text, default="")
+    recommended_plan = Column(Text, default="")  # AI-suggested evidence-based plan
+    sbar_summary = Column(Text, default="")  # Situation-Background-Assessment-Recommendation
+    primary_survey = Column(Text, default="")  # ABCDE for emergency/trauma
+    secondary_survey = Column(Text, default="")  # Head-to-toe for emergency/trauma
     follow_up = Column(Text, default="")
 
     # Metadata

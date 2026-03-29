@@ -152,6 +152,10 @@ class ApiService {
     return data;
   }
 
+  async deleteEncounter(id: string): Promise<void> {
+    await this.client.delete(`/encounters/${id}`);
+  }
+
   async pauseRecording(id: string): Promise<void> {
     await this.client.post(`/encounters/${id}/pause`);
   }

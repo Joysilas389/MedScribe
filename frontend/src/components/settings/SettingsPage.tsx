@@ -8,7 +8,7 @@ import api from '../../services/api';
 import type { SpecialtyTemplate } from '../../types';
 import { SUPPORTED_LANGUAGES } from '../../types';
 import {
-  User, Globe, Layout, Save, Loader2, CheckCircle2
+  User, Globe, Layout, Save, Loader2, CheckCircle2, Moon, Sun, Info, Shield
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -134,6 +134,62 @@ export default function SettingsPage() {
               ))}
             </select>
             <p className="text-xs text-slate-400 mt-1">Used as default when creating new encounters</p>
+          </div>
+        </section>
+
+        {/* Dark / Light Mode */}
+        <section className="card p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <Moon className="w-5 h-5 text-teal-600" />
+            <h2 className="text-lg font-semibold text-slate-800">Appearance</h2>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-700">Dark Mode</p>
+              <p className="text-xs text-slate-400 mt-0.5">Switch between light and dark theme</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                document.documentElement.classList.toggle('dark');
+                const isDark = document.documentElement.classList.contains('dark');
+                localStorage.setItem('medscribe_theme', isDark ? 'dark' : 'light');
+              }}
+              className="btn-secondary py-2 px-4 text-sm"
+            >
+              <Sun className="w-4 h-4" /> / <Moon className="w-4 h-4" /> Toggle
+            </button>
+          </div>
+        </section>
+
+        {/* How to Use */}
+        <section className="card p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <Info className="w-5 h-5 text-teal-600" />
+            <h2 className="text-lg font-semibold text-slate-800">How to Use MedScribe</h2>
+          </div>
+          <div className="space-y-3 text-sm text-slate-600">
+            <div className="flex gap-3"><span className="font-bold text-teal-600 flex-shrink-0">1.</span><span><strong>Create Encounter</strong> — Enter patient details, select specialty, tick consent checkbox, and create.</span></div>
+            <div className="flex gap-3"><span className="font-bold text-teal-600 flex-shrink-0">2.</span><span><strong>Input Transcript</strong> — Type/paste the conversation in the &quot;Type Input&quot; tab, or use &quot;Record&quot; for live audio capture (requires OpenAI Whisper API key).</span></div>
+            <div className="flex gap-3"><span className="font-bold text-teal-600 flex-shrink-0">3.</span><span><strong>Generate Note</strong> — Tap &quot;Generate Note&quot; and the AI structures the conversation into a professional clinical note with all sections.</span></div>
+            <div className="flex gap-3"><span className="font-bold text-teal-600 flex-shrink-0">4.</span><span><strong>Review &amp; Edit</strong> — Review every section. Edit any field by tapping the pencil icon. The AI also suggests evidence-based management plans.</span></div>
+            <div className="flex gap-3"><span className="font-bold text-teal-600 flex-shrink-0">5.</span><span><strong>Sign Off</strong> — Once satisfied, sign off to lock the note. This creates a permanent clinical record.</span></div>
+            <div className="flex gap-3"><span className="font-bold text-teal-600 flex-shrink-0">6.</span><span><strong>Export PDF</strong> — Download a professionally formatted PDF with all sections, SBAR summary, timestamps, and your digital signature.</span></div>
+          </div>
+        </section>
+
+        {/* Disclaimer */}
+        <section className="card p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <Shield className="w-5 h-5 text-amber-600" />
+            <h2 className="text-lg font-semibold text-slate-800">Disclaimer</h2>
+          </div>
+          <div className="space-y-3 text-sm text-slate-600 leading-relaxed">
+            <p><strong>MedScribe is a clinical documentation assistant, NOT a clinical decision-making tool.</strong></p>
+            <p>AI-generated content including recommended plans, differential diagnoses, and SBAR summaries are suggestions based on the transcript provided. They do not replace clinical judgment, physical examination, or professional medical decision-making.</p>
+            <p>The physician is solely responsible for verifying all AI-generated content, making clinical decisions, and ensuring accuracy before signing off on any clinical note.</p>
+            <p>MedScribe does not diagnose, prescribe, or recommend treatment. It documents what is discussed during clinical encounters and structures it into professional medical notes.</p>
+            <p className="text-xs text-slate-400 mt-2">By using this application, you acknowledge and accept these terms.</p>
           </div>
         </section>
 

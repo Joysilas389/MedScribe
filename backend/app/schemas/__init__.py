@@ -135,7 +135,10 @@ class ClinicalNoteResponse(BaseModel):
     status: str
     chief_complaint: str
     hpi: str
+    on_direct_questioning: str = ""
     past_medical_history: str
+    past_surgical_history: str = ""
+    drug_history: str = ""
     medications: str
     allergies: str
     family_history: str
@@ -147,8 +150,18 @@ class ClinicalNoteResponse(BaseModel):
     obstetric_history: str = ""
     review_of_systems: Dict[str, Any]
     physical_examination: Dict[str, Any]
+    lab_investigations: str = ""
+    imaging_investigations: str = ""
+    investigation_comments: str = ""
+    provisional_diagnosis: str = ""
+    differential_diagnosis: str = ""
+    final_diagnosis: str = ""
     assessment: str
     plan: str
+    recommended_plan: str = ""
+    sbar_summary: str = ""
+    primary_survey: str = ""
+    secondary_survey: str = ""
     follow_up: str
     missing_sections: List[str]
     uncertain_fields: List[str]
@@ -172,11 +185,15 @@ class NoteEditRequest(BaseModel):
     @classmethod
     def validate_section(cls, v: str) -> str:
         valid_sections = {
-            "chief_complaint", "hpi", "past_medical_history", "medications",
+            "chief_complaint", "hpi", "on_direct_questioning",
+            "past_medical_history", "past_surgical_history", "drug_history", "medications",
             "allergies", "family_history", "social_history",
             "nutritional_history", "immunization_history",
             "developmental_history", "gynecological_history", "obstetric_history",
-            "review_of_systems", "physical_examination", "assessment", "plan", "follow_up"
+            "review_of_systems", "physical_examination",
+            "lab_investigations", "imaging_investigations", "investigation_comments",
+            "provisional_diagnosis", "differential_diagnosis", "final_diagnosis",
+            "assessment", "plan", "recommended_plan", "sbar_summary", "primary_survey", "secondary_survey", "follow_up"
         }
         if v not in valid_sections:
             raise ValueError(f"Invalid section: {v}. Must be one of: {valid_sections}")
