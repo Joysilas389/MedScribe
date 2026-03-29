@@ -181,6 +181,10 @@ class ApiService {
     return data;
   }
 
+  async submitManualTranscript(encounterId: string, text: string): Promise<void> {
+    await this.client.post(`/encounters/${encounterId}/manual-transcript`, { text });
+  }
+
   // --- Note ---
 
   async generateNote(encounterId: string): Promise<ClinicalNote> {

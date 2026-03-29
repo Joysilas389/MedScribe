@@ -218,7 +218,76 @@ async def get_transcript(
     }
 
 
-# --- Note Generation ---
+# --- Manual Transcript Input ---
+
+@router.post("/{encounter_id}/manual-transcript")
+async def submit_bulk_manual_transcript(
+    encounter_id: str,
+    body: dict,
+    request: Request,
+    current_user: dict = Depends(require_roles(["physician"])),
+    db: AsyncSession = Depends(get_db)
+):
+    """Submit a full manual transcript (typed/pasted by physician)."""
+    encounter = await _get_encounter_or_404(db, encounter_id, current_user["user_id"])
+    text = body.get("text", "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Transcript text cannot be empty.")
+
+    # Store as a single transcript segment
+    await transcription_service.store_transcript_segment(
+        db=db,
+        encounter_id=encounter.id,
+        text=text,
+        speaker_label="manual_input",
+        language_detected=encounter.spoken_language,
+        confidence=1.0,
+    )
+
+    # Transition status
+    encounter.status = EncounterStatus.TRANSCRIBING
+    await db.flush()
+
+    await audit_logger.log(
+        db=db,
+        action="encounter.manual_transcript",
+        resource_type="encounter",
+        resource_id=encounter.id,
+        user_id=current_user["user_id"],
+        details={"status": "manual_input"},
+        ip_address=get_client_ip(request),
+    )
+
+    return {"status": "transcript_received"}
+
+
+@router.post("/{encounter_id}/transcript/manual")
+async def submit_manual_transcript(
+    encounter_id: str,
+    body: dict,
+    request: Request,
+    current_user: dict = Depends(require_roles(["physician"])),
+    db: AsyncSession = Depends(get_db)
+):
+    """Submit a manual transcript segment (typed by physician)."""
+    encounter = await _get_encounter_or_404(db, encounter_id, current_user["user_id"])
+
+    content = body.get("content", "").strip()
+    speaker = body.get("speaker_label", "unknown")
+
+    if not content:
+        raise HTTPException(status_code=400, detail="Content cannot be empty.")
+
+    segment = await transcription_service.store_transcript_segment(
+        db=db,
+        encounter_id=encounter.id,
+        text=content,
+        speaker_label=speaker,
+        language_detected=encounter.spoken_language,
+        confidence=1.0,  # Manual input = full confidence
+    )
+
+    return {"id": segment.id, "sequence": segment.sequence_number}
 
 @router.post("/{encounter_id}/generate-note")
 async def generate_note(
