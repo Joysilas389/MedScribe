@@ -1,5 +1,6 @@
 """
 Database connection and session management.
+Supports both PostgreSQL (production) and SQLite (development).
 Uses async SQLAlchemy for non-blocking database operations.
 """
 
@@ -8,10 +9,26 @@ from app.core import config
 from app.models.models import Base
 
 
+def get_async_database_url(url: str) -> str:
+    """Convert a database URL to its async driver equivalent."""
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql+asyncpg://"):
+        return url
+    elif url.startswith("sqlite"):
+        if "+aiosqlite" not in url:
+            return url.replace("sqlite://", "sqlite+aiosqlite://", 1)
+        return url
+    return url
+
+
+async_url = get_async_database_url(config.database_url)
+
 engine = create_async_engine(
-    config.database_url,
+    async_url,
     echo=config.debug and not config.is_production,
-    future=True
+    future=True,
+    pool_pre_ping=True,
 )
 
 async_session_factory = async_sessionmaker(

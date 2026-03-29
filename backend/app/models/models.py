@@ -64,7 +64,7 @@ class User(Base):
     credentials = Column(String(100), default="")  # e.g., "MD, FACP"
     specialty = Column(String(100), default="General Practice")
     institution = Column(String(255), default="")
-    role = Column(Enum(UserRole), default=UserRole.PHYSICIAN, nullable=False)
+    role = Column(Enum(UserRole, native_enum=False), default=UserRole.PHYSICIAN, nullable=False)
     preferred_language = Column(String(10), default="en")
     preferred_template = Column(String(50), default="general_practice")
     is_active = Column(Boolean, default=True)
@@ -86,7 +86,7 @@ class Encounter(Base):
     patient_name = Column(String(255), default="")
     patient_dob = Column(String(10), default="")  # Stored encrypted
     patient_mrn = Column(String(50), default="")  # Medical Record Number, encrypted
-    status = Column(Enum(EncounterStatus), default=EncounterStatus.RECORDING)
+    status = Column(Enum(EncounterStatus, native_enum=False), default=EncounterStatus.RECORDING)
     specialty_template = Column(String(50), default="general_practice")
     spoken_language = Column(String(10), default="en")
     output_language = Column(String(10), default="en")
@@ -132,7 +132,7 @@ class ClinicalNote(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     encounter_id = Column(String(36), ForeignKey("encounters.id"), unique=True, nullable=False)
-    status = Column(Enum(NoteStatus), default=NoteStatus.DRAFT)
+    status = Column(Enum(NoteStatus, native_enum=False), default=NoteStatus.DRAFT)
 
     # Structured note sections (stored as JSON for flexibility)
     chief_complaint = Column(Text, default="")
