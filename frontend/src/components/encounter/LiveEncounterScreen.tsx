@@ -274,7 +274,7 @@ export default function LiveEncounterScreen() {
           </div>
 
           {/* Consent Checkbox — only shown for new encounters */}
-          {!encounter?.consent_recorded ? (
+          {!(encounter as Encounter | null)?.consent_recorded ? (
             <div className="p-4 rounded-xl bg-teal-50 border border-teal-200">
               <div className="flex items-start gap-3">
                 <Shield className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" />
