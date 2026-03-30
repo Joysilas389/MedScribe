@@ -101,7 +101,13 @@ export default function LiveEncounterScreen() {
 
   useEffect(() => {
     if (id && id !== 'new') {
-      api.getEncounter(id).then(setEncounter).catch(() => setErrorMsg('Encounter not found'));
+      api.getEncounter(id).then((enc) => {
+        setEncounter(enc);
+        // If consent was already recorded for this encounter, skip the consent UI
+        if (enc.consent_recorded) {
+          setConsentChecked(true);
+        }
+      }).catch(() => setErrorMsg('Encounter not found'));
     }
   }, [id]);
 
@@ -267,30 +273,37 @@ export default function LiveEncounterScreen() {
             </div>
           </div>
 
-          {/* Consent Checkbox */}
-          <div className="p-4 rounded-xl bg-teal-50 border border-teal-200">
-            <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-teal-800 mb-1">Patient Consent</p>
-                <p className="text-xs text-teal-600 mb-3">
-                  Before using AI-assisted documentation, obtain verbal or written consent from the patient.
-                </p>
-                <label className="flex items-start gap-3 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={consentChecked}
-                    onChange={(e) => setConsentChecked(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded border-teal-400 text-teal-600 focus:ring-teal-500 cursor-pointer"
-                  />
-                  <span className="text-sm text-teal-800 leading-snug">
-                    I confirm that I have informed the patient about AI-assisted clinical documentation
-                    and have obtained their consent to proceed.
-                  </span>
-                </label>
+          {/* Consent Checkbox — only shown for new encounters */}
+          {!encounter?.consent_recorded ? (
+            <div className="p-4 rounded-xl bg-teal-50 border border-teal-200">
+              <div className="flex items-start gap-3">
+                <Shield className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-teal-800 mb-1">Patient Consent</p>
+                  <p className="text-xs text-teal-600 mb-3">
+                    Before using AI-assisted documentation, obtain verbal or written consent from the patient.
+                  </p>
+                  <label className="flex items-start gap-3 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={consentChecked}
+                      onChange={(e) => setConsentChecked(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-teal-400 text-teal-600 focus:ring-teal-500 cursor-pointer"
+                    />
+                    <span className="text-sm text-teal-800 leading-snug">
+                      I confirm that I have informed the patient about AI-assisted clinical documentation
+                      and have obtained their consent to proceed.
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-teal-50 border border-teal-200 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-teal-600 flex-shrink-0" />
+              <p className="text-xs text-teal-700 font-medium">Patient consent already recorded for this encounter</p>
+            </div>
+          )}
 
           <button
             onClick={handleCreateAndStart}
