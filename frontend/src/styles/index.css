@@ -136,3 +136,141 @@ body, #root {
   overflow-x: hidden;
   max-width: 100vw;
 }
+
+/* ============================================================
+   DARK MODE — applied when <html class="dark"> is set
+   ============================================================ */
+
+.dark body {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .card,
+.dark .note-section {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark .card-hover:hover {
+  background-color: #263548 !important;
+  border-color: #475569 !important;
+}
+
+.dark .input-field {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .input-field::placeholder {
+  color: #64748b !important;
+}
+
+.dark .btn-secondary {
+  background-color: #1e293b !important;
+  color: #cbd5e1 !important;
+  border-color: #334155 !important;
+}
+
+.dark .btn-secondary:hover {
+  background-color: #263548 !important;
+  border-color: #475569 !important;
+}
+
+.dark .btn-icon {
+  color: #94a3b8 !important;
+}
+
+.dark .btn-icon:hover {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+/* Navigation / layout */
+.dark nav,
+.dark header,
+.dark aside {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+/* Text colours */
+.dark .text-slate-800 { color: #e2e8f0 !important; }
+.dark .text-slate-700 { color: #cbd5e1 !important; }
+.dark .text-slate-600 { color: #94a3b8 !important; }
+.dark .text-slate-500 { color: #64748b !important; }
+.dark .text-slate-400 { color: #475569 !important; }
+
+/* Backgrounds */
+.dark .bg-white        { background-color: #1e293b !important; }
+.dark .bg-slate-50     { background-color: #0f172a !important; }
+.dark .bg-slate-100    { background-color: #1e293b !important; }
+.dark .bg-slate-200    { background-color: #263548 !important; }
+
+/* Borders */
+.dark .border-slate-200 { border-color: #334155 !important; }
+.dark .border-slate-300 { border-color: #475569 !important; }
+
+/* Force dark on ALL divs when dark mode active */
+html.dark {
+  background-color: #0f172a !important;
+  color-scheme: dark;
+}
+
+html.dark div,
+html.dark main,
+html.dark section {
+  color: inherit;
+}
+
+/* Note sections */
+.dark .note-section-missing {
+  background-color: rgba(120, 80, 0, 0.15);
+  border-color: #92400e;
+}
+.dark .note-section-locked {
+  background-color: #1a2535;
+}
+
+/* Section headers */
+.dark .section-header { color: #2dd4bf; }
+
+/* Badges */
+.dark .badge-slate {
+  background-color: #1e293b;
+  color: #94a3b8;
+}
+
+/* Scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #334155;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #475569;
+}
+
+/* Select dropdowns */
+.dark select {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+/* Recording dot area */
+.dark .bg-slate-50.border-b { background-color: #0f172a; border-color: #1e293b; }
+
+/* Teal accent adjustments for dark */
+.dark .bg-teal-50  { background-color: rgba(13, 148, 136, 0.1); }
+.dark .text-teal-800 { color: #5eead4; }
+.dark .text-teal-700 { color: #2dd4bf; }
+.dark .text-teal-600 { color: #14b8a6; }
+.dark .border-teal-200 { border-color: rgba(13, 148, 136, 0.3); }
+
+/* Amber / red accents */
+.dark .bg-amber-50  { background-color: rgba(120, 80, 0, 0.15); }
+.dark .bg-red-50    { background-color: rgba(127, 29, 29, 0.15); }
+.dark .bg-emerald-50 { background-color: rgba(6, 78, 59, 0.15); }
+
+/* Modal / overlay backgrounds */
+.dark .bg-black\/50 { background-color: rgba(0,0,0,0.7); }

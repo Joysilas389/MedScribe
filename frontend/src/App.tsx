@@ -3,6 +3,7 @@
  */
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ErrorBoundary } from './components/shared';
 import SplashScreen from './components/shared/SplashScreen';
@@ -53,6 +54,16 @@ function AppRoutes() {
 }
 
 export default function App() {
+  // Apply saved theme on mount — must run before first paint
+  useEffect(() => {
+    const saved = localStorage.getItem('medscribe_theme');
+    if (saved === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   return (
     <ErrorBoundary>
       <BrowserRouter>

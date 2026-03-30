@@ -30,7 +30,7 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -44,7 +44,7 @@ export default function AppLayout() {
       <aside
         className={clsx(
           'fixed lg:static inset-y-0 left-0 z-40',
-          'w-72 bg-white border-r border-slate-200',
+          'w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700',
           'flex flex-col transition-transform duration-300 ease-out',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
@@ -112,7 +112,7 @@ export default function AppLayout() {
       {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar (mobile) */}
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-200">
+        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
           <button
             className="btn-icon"
             onClick={() => setSidebarOpen(true)}
