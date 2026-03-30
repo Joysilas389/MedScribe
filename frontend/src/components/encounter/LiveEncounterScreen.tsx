@@ -91,7 +91,7 @@ export default function LiveEncounterScreen() {
     startRecording, stopRecording, pauseRecording, resumeRecording,
   } = useAudioRecorder({
     encounterId,
-    language: ({ en:'en-US', es:'es-ES', fr:'fr-FR', pt:'pt-PT', ar:'ar-SA', zh:'zh-CN', hi:'hi-IN', sw:'sw-KE' }[formData.spoken_language] || 'en-US'),
+    language: formData.spoken_language || 'en',
     onError: (err) => setErrorMsg(err),
   });
 

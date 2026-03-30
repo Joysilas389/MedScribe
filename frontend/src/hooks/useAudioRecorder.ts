@@ -3,27 +3,82 @@
  *
  * Uses the browser's built-in SpeechRecognition (Chrome/Edge) for free,
  * zero-latency, no-API-key live transcription. Sends recognised text
- * segments to the backend over WebSocket (text, not audio binary).
- *
- * Fallback: if Web Speech API is unavailable, user is directed to the
- * manual text input tab.
+ * segments to the backend over WebSocket as JSON (not audio binary).
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { TranscriptSegment, RecordingState } from '../types';
 import api from '../services/api';
 
-// webkitSpeechRecognition is not in the standard DOM lib types
+// Full Web Speech API type declarations (not in all TS DOM lib versions)
+interface ISpeechRecognition extends EventTarget {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((event: ISpeechRecognitionEvent) => void) | null;
+  onerror: ((event: ISpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+}
+
+interface ISpeechRecognitionEvent {
+  resultIndex: number;
+  results: ISpeechRecognitionResultList;
+}
+
+interface ISpeechRecognitionResultList {
+  length: number;
+  item(index: number): ISpeechRecognitionResult;
+  [index: number]: ISpeechRecognitionResult;
+}
+
+interface ISpeechRecognitionResult {
+  isFinal: boolean;
+  length: number;
+  item(index: number): ISpeechRecognitionAlternative;
+  [index: number]: ISpeechRecognitionAlternative;
+}
+
+interface ISpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface ISpeechRecognitionErrorEvent {
+  error: string;
+  message: string;
+}
+
+interface ISpeechRecognitionConstructor {
+  new (): ISpeechRecognition;
+}
+
+// Extend Window to include webkit-prefixed variant
 declare global {
   interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    webkitSpeechRecognition: any;
+    SpeechRecognition?: ISpeechRecognitionConstructor;
+    webkitSpeechRecognition?: ISpeechRecognitionConstructor;
   }
 }
 
+// BCP-47 language code map
+const LANG_MAP: Record<string, string> = {
+  en: 'en-US',
+  es: 'es-ES',
+  fr: 'fr-FR',
+  pt: 'pt-PT',
+  ar: 'ar-SA',
+  zh: 'zh-CN',
+  hi: 'hi-IN',
+  sw: 'sw-KE',
+};
+
 interface UseAudioRecorderOptions {
   encounterId: string;
-  language?: string; // BCP-47 e.g. 'en-US', 'fr-FR'
+  language?: string;
   onTranscriptSegment?: (segment: TranscriptSegment) => void;
   onError?: (error: string) => void;
 }
@@ -40,7 +95,7 @@ interface UseAudioRecorderReturn {
 
 export function useAudioRecorder({
   encounterId,
-  language = 'en-US',
+  language = 'en',
   onTranscriptSegment,
   onError,
 }: UseAudioRecorderOptions): UseAudioRecorderReturn {
@@ -52,7 +107,7 @@ export function useAudioRecorder({
   });
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const segCountRef = useRef(0);
@@ -60,7 +115,8 @@ export function useAudioRecorder({
 
   const isSupported =
     typeof window !== 'undefined' &&
-    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+    (typeof window.SpeechRecognition !== 'undefined' ||
+      typeof window.webkitSpeechRecognition !== 'undefined');
 
   const startTimer = useCallback(() => {
     if (timerRef.current) return;
@@ -80,7 +136,7 @@ export function useAudioRecorder({
     return () => {
       stopTimer();
       recognitionRef.current?.stop();
-      if (wsRef.current) wsRef.current.close();
+      wsRef.current?.close();
     };
   }, [stopTimer]);
 
@@ -88,13 +144,14 @@ export function useAudioRecorder({
     (text: string) => {
       if (!text.trim()) return;
       segCountRef.current += 1;
+      const langCode = language.split('-')[0];
       const segment: TranscriptSegment = {
         sequence: segCountRef.current,
         speaker: 'physician',
         content: text.trim(),
         timestamp_start: 0,
         timestamp_end: 0,
-        language: language.split('-')[0],
+        language: langCode,
         confidence: 1.0,
       };
       setSegments((prev) => [...prev, segment]);
@@ -106,7 +163,7 @@ export function useAudioRecorder({
             type: 'transcript_text',
             text: text.trim(),
             speaker: 'physician',
-            language: language.split('-')[0],
+            language: langCode,
             confidence: 1.0,
           })
         );
@@ -117,17 +174,15 @@ export function useAudioRecorder({
 
   const startRecording = useCallback(async () => {
     if (!isSupported) {
-      onError?.(
-        'Live recording requires Chrome or Edge. Please use the manual text input tab instead.'
-      );
+      onError?.('Live recording requires Chrome or Edge. Please use the manual text input tab instead.');
       return;
     }
 
     try {
+      // Connect WebSocket for persisting text segments
       const wsUrl = api.getWsUrl(encounterId);
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
-
       ws.onopen = () => {
         setState((prev) => ({ ...prev, isConnected: true }));
         ws.send(JSON.stringify({ type: 'config', mode: 'web_speech' }));
@@ -135,17 +190,23 @@ export function useAudioRecorder({
       ws.onerror = () => onError?.('WebSocket connection error.');
       ws.onclose = () => setState((prev) => ({ ...prev, isConnected: false }));
 
+      // Instantiate SpeechRecognition
       const SpeechRecognitionCtor =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
+        window.SpeechRecognition ?? window.webkitSpeechRecognition;
+      if (!SpeechRecognitionCtor) {
+        onError?.('SpeechRecognition not available in this browser.');
+        return;
+      }
+
       const recognition = new SpeechRecognitionCtor();
       recognitionRef.current = recognition;
 
-      recognition.lang = language;
+      recognition.lang = LANG_MAP[language] ?? language;
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
+      recognition.onresult = (event: ISpeechRecognitionEvent) => {
         if (isPausedRef.current) return;
         for (let i = event.resultIndex; i < event.results.length; i++) {
           if (event.results[i].isFinal) {
@@ -154,12 +215,12 @@ export function useAudioRecorder({
         }
       };
 
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      recognition.onerror = (event: ISpeechRecognitionErrorEvent) => {
         if (event.error === 'no-speech' || event.error === 'aborted') return;
         onError?.(`Microphone error: ${event.error}. Check permissions and try again.`);
       };
 
-      // Auto-restart after silence (browser stops ~60s after no speech)
+      // Auto-restart after silence (browser stops after ~60s no speech)
       recognition.onend = () => {
         if (!isPausedRef.current && recognitionRef.current === recognition) {
           try { recognition.start(); } catch { /* already started */ }
@@ -167,7 +228,6 @@ export function useAudioRecorder({
       };
 
       recognition.start();
-
       setState({ isRecording: true, isPaused: false, elapsedSeconds: 0, isConnected: true });
       isPausedRef.current = false;
       startTimer();
