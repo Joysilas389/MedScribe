@@ -16,6 +16,18 @@ export default function SettingsPage() {
   const [templates, setTemplates] = useState<SpecialtyTemplate[]>([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    const stored = localStorage.getItem('medscribe_theme');
+    if (stored) return stored === 'dark';
+    return document.documentElement.classList.contains('dark');
+  });
+
+  const toggleDark = () => {
+    const next = !isDark;
+    setIsDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('medscribe_theme', next ? 'dark' : 'light');
+  };
   const [form, setForm] = useState({
     full_name: user?.full_name || '',
     credentials: user?.credentials || '',
@@ -150,14 +162,14 @@ export default function SettingsPage() {
             </div>
             <button
               type="button"
-              onClick={() => {
-                document.documentElement.classList.toggle('dark');
-                const isDark = document.documentElement.classList.contains('dark');
-                localStorage.setItem('medscribe_theme', isDark ? 'dark' : 'light');
-              }}
-              className="btn-secondary py-2 px-4 text-sm"
+              onClick={toggleDark}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${isDark ? 'bg-teal-600' : 'bg-slate-200'}`}
+              role="switch"
+              aria-checked={isDark}
             >
-              <Sun className="w-4 h-4" /> / <Moon className="w-4 h-4" /> Toggle
+              <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-200 ${isDark ? 'translate-x-6' : 'translate-x-1'}`}>
+                {isDark ? <Moon className="w-3 h-3 text-teal-600" /> : <Sun className="w-3 h-3 text-slate-400" />}
+              </span>
             </button>
           </div>
         </section>

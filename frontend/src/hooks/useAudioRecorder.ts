@@ -1,21 +1,29 @@
 /**
- * useAudioRecorder — Browser audio capture and WebSocket streaming.
+ * useAudioRecorder — Web Speech API real-time transcription.
  *
- * Handles:
- * - Microphone access via MediaRecorder API
- * - Audio chunk streaming over WebSocket
- * - Start/stop/pause/resume controls
- * - Elapsed time tracking
- * - Connection state management
- * - Transcript segment reception
+ * Uses the browser's built-in SpeechRecognition (Chrome/Edge) for free,
+ * zero-latency, no-API-key live transcription. Sends recognised text
+ * segments to the backend over WebSocket (text, not audio binary).
+ *
+ * Fallback: if Web Speech API is unavailable, user is directed to the
+ * manual text input tab.
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { TranscriptSegment, RecordingState } from '../types';
 import api from '../services/api';
 
+// webkitSpeechRecognition is not in the standard DOM lib types
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    webkitSpeechRecognition: any;
+  }
+}
+
 interface UseAudioRecorderOptions {
   encounterId: string;
+  language?: string; // BCP-47 e.g. 'en-US', 'fr-FR'
   onTranscriptSegment?: (segment: TranscriptSegment) => void;
   onError?: (error: string) => void;
 }
@@ -23,6 +31,7 @@ interface UseAudioRecorderOptions {
 interface UseAudioRecorderReturn {
   state: RecordingState;
   segments: TranscriptSegment[];
+  isSupported: boolean;
   startRecording: () => Promise<void>;
   stopRecording: () => void;
   pauseRecording: () => void;
@@ -31,6 +40,7 @@ interface UseAudioRecorderReturn {
 
 export function useAudioRecorder({
   encounterId,
+  language = 'en-US',
   onTranscriptSegment,
   onError,
 }: UseAudioRecorderOptions): UseAudioRecorderReturn {
@@ -42,13 +52,16 @@ export function useAudioRecorder({
   });
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
 
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const segCountRef = useRef(0);
+  const isPausedRef = useRef(false);
 
-  // Timer management
+  const isSupported =
+    typeof window !== 'undefined' &&
+    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
   const startTimer = useCallback(() => {
     if (timerRef.current) return;
     timerRef.current = setInterval(() => {
@@ -63,159 +76,131 @@ export function useAudioRecorder({
     }
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopTimer();
+      recognitionRef.current?.stop();
       if (wsRef.current) wsRef.current.close();
-      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
     };
   }, [stopTimer]);
 
-  const startRecording = useCallback(async () => {
-    try {
-      // Request microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: 16000,
-        },
-      });
-      streamRef.current = stream;
+  const sendSegment = useCallback(
+    (text: string) => {
+      if (!text.trim()) return;
+      segCountRef.current += 1;
+      const segment: TranscriptSegment = {
+        sequence: segCountRef.current,
+        speaker: 'physician',
+        content: text.trim(),
+        timestamp_start: 0,
+        timestamp_end: 0,
+        language: language.split('-')[0],
+        confidence: 1.0,
+      };
+      setSegments((prev) => [...prev, segment]);
+      onTranscriptSegment?.(segment);
 
-      // Connect WebSocket
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(
+          JSON.stringify({
+            type: 'transcript_text',
+            text: text.trim(),
+            speaker: 'physician',
+            language: language.split('-')[0],
+            confidence: 1.0,
+          })
+        );
+      }
+    },
+    [language, onTranscriptSegment]
+  );
+
+  const startRecording = useCallback(async () => {
+    if (!isSupported) {
+      onError?.(
+        'Live recording requires Chrome or Edge. Please use the manual text input tab instead.'
+      );
+      return;
+    }
+
+    try {
       const wsUrl = api.getWsUrl(encounterId);
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
         setState((prev) => ({ ...prev, isConnected: true }));
-        // Send audio format config
-        ws.send(JSON.stringify({ type: 'config', format: 'audio/webm' }));
+        ws.send(JSON.stringify({ type: 'config', mode: 'web_speech' }));
       };
+      ws.onerror = () => onError?.('WebSocket connection error.');
+      ws.onclose = () => setState((prev) => ({ ...prev, isConnected: false }));
 
-      ws.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          if (msg.type === 'transcript') {
-            segCountRef.current += 1;
-            const segment: TranscriptSegment = {
-              sequence: segCountRef.current,
-              speaker: msg.speaker || 'unknown',
-              content: msg.text,
-              timestamp_start: 0,
-              timestamp_end: 0,
-              language: msg.language || 'en',
-              confidence: msg.confidence || 0,
-            };
-            setSegments((prev) => [...prev, segment]);
-            onTranscriptSegment?.(segment);
-          } else if (msg.type === 'error') {
-            onError?.(msg.message);
+      const SpeechRecognitionCtor =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognitionCtor();
+      recognitionRef.current = recognition;
+
+      recognition.lang = language;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        if (isPausedRef.current) return;
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            sendSegment(event.results[i][0].transcript);
           }
-        } catch {
-          // ignore non-JSON messages
         }
       };
 
-      ws.onerror = () => {
-        onError?.('WebSocket connection error. Please check your connection.');
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        if (event.error === 'no-speech' || event.error === 'aborted') return;
+        onError?.(`Microphone error: ${event.error}. Check permissions and try again.`);
       };
 
-      ws.onclose = () => {
-        setState((prev) => ({ ...prev, isConnected: false }));
-      };
-
-      // Wait for connection
-      await new Promise<void>((resolve, reject) => {
-        ws.addEventListener('open', () => resolve(), { once: true });
-        ws.addEventListener('error', () => reject(new Error('Connection failed')), { once: true });
-      });
-
-      // Start MediaRecorder
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : 'audio/webm';
-
-      const recorder = new MediaRecorder(stream, {
-        mimeType,
-        audioBitsPerSecond: 64000,
-      });
-      mediaRecorderRef.current = recorder;
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
-          ws.send(event.data);
+      // Auto-restart after silence (browser stops ~60s after no speech)
+      recognition.onend = () => {
+        if (!isPausedRef.current && recognitionRef.current === recognition) {
+          try { recognition.start(); } catch { /* already started */ }
         }
       };
 
-      recorder.start(2000); // Send chunks every 2 seconds
+      recognition.start();
 
-      setState({
-        isRecording: true,
-        isPaused: false,
-        elapsedSeconds: 0,
-        isConnected: true,
-      });
+      setState({ isRecording: true, isPaused: false, elapsedSeconds: 0, isConnected: true });
+      isPausedRef.current = false;
       startTimer();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to start recording';
-      onError?.(msg);
+      onError?.(err instanceof Error ? err.message : 'Failed to start recording');
     }
-  }, [encounterId, onTranscriptSegment, onError, startTimer]);
+  }, [encounterId, isSupported, language, onError, sendSegment, startTimer]);
 
   const stopRecording = useCallback(() => {
-    // Stop MediaRecorder
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-    }
-    // Stop microphone
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-    }
-    // Send stop command and close WebSocket
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    isPausedRef.current = false;
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'stop' }));
-      setTimeout(() => wsRef.current?.close(), 1000);
+      setTimeout(() => wsRef.current?.close(), 500);
     }
     stopTimer();
-    setState((prev) => ({
-      ...prev,
-      isRecording: false,
-      isPaused: false,
-      isConnected: false,
-    }));
+    setState((prev) => ({ ...prev, isRecording: false, isPaused: false, isConnected: false }));
   }, [stopTimer]);
 
   const pauseRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.pause();
-    }
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'pause' }));
-    }
+    isPausedRef.current = true;
+    recognitionRef.current?.stop();
     stopTimer();
     setState((prev) => ({ ...prev, isPaused: true }));
   }, [stopTimer]);
 
   const resumeRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
-      mediaRecorderRef.current.resume();
-    }
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'resume' }));
-    }
+    isPausedRef.current = false;
+    try { recognitionRef.current?.start(); } catch { /* ok */ }
     startTimer();
     setState((prev) => ({ ...prev, isPaused: false }));
   }, [startTimer]);
 
-  return {
-    state,
-    segments,
-    startRecording,
-    stopRecording,
-    pauseRecording,
-    resumeRecording,
-  };
+  return { state, segments, isSupported, startRecording, stopRecording, pauseRecording, resumeRecording };
 }

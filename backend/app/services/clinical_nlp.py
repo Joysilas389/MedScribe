@@ -1,12 +1,13 @@
 """
-ClinicalNLPService — Medical entity extraction and clinical concept identification.
+ClinicalNLPService — Medical entity extraction using medspaCy + regex fallback.
 
-Handles:
-- Parsing transcripts to identify medical entities
-- Extracting symptoms, medications, procedures, clinical concepts
-- Relevance filtering — removing non-clinical conversation
-- Mapping extracted data to note sections
-- Handling clinical terminology normalization
+Uses medspaCy (built on spaCy) for:
+- Named Entity Recognition of medications, symptoms, procedures
+- ConText algorithm: negation detection ("no fever" ≠ fever)
+- Clinical section detection (HPI, Assessment, Plan, etc.)
+- Sentence-level clinical relevance filtering
+
+Falls back to regex patterns if medspaCy is not installed (e.g. Render free tier).
 """
 
 import re
@@ -14,6 +15,26 @@ import logging
 from typing import Dict, List, Any, Optional
 
 logger = logging.getLogger(__name__)
+
+# ── medspaCy setup (optional — graceful fallback to regex) ──────────────────
+_nlp = None
+_medspacy_available = False
+
+def _load_medspacy():
+    global _nlp, _medspacy_available
+    if _nlp is not None:
+        return
+    try:
+        import medspacy
+        _nlp = medspacy.load("en_core_web_sm", enable=["medspacy_pyrush", "medspacy_target_matcher", "medspacy_context"])
+        _medspacy_available = True
+        logger.info("medspaCy loaded — using NLP-enhanced entity extraction")
+    except Exception as e:
+        logger.warning(f"medspaCy not available ({e}), falling back to regex extraction")
+        _medspacy_available = False
+
+_load_medspacy()
+# ────────────────────────────────────────────────────────────────────────────
 
 
 class ClinicalNLPService:
@@ -55,8 +76,76 @@ class ClinicalNLPService:
         """
         Extract all clinical entities from transcript text.
 
-        Returns a structured dict organized by note section.
+        Uses medspaCy (NLP-powered) when available, else regex fallback.
+        Returns a structured dict organised by note section.
         """
+        if _medspacy_available and _nlp is not None:
+            return self._extract_with_medspacy(transcript_text)
+        return self._extract_with_regex(transcript_text)
+
+    def _extract_with_medspacy(self, transcript_text: str) -> Dict[str, Any]:
+        """medspaCy-powered extraction with negation detection via ConText."""
+        try:
+            from medspacy.ner import TargetRule
+
+            doc = _nlp(transcript_text)
+
+            symptoms: List[str] = []
+            medications: List[str] = []
+            procedures: List[str] = []
+            diagnoses: List[str] = []
+
+            for ent in doc.ents:
+                # Skip negated entities (ConText: "no fever" → fever is negated)
+                is_negated = getattr(ent._, 'is_negated', False)
+                is_uncertain = getattr(ent._, 'is_uncertain', False)
+
+                label = ent.label_.upper()
+                text = ent.text.strip()
+
+                if label in ("PROBLEM", "SYMPTOM", "DISEASE", "CONDITION"):
+                    if not is_negated:
+                        symptoms.append(text)
+                    # Negated symptoms still useful for differential (mark them)
+                    elif text not in symptoms:
+                        symptoms.append(f"Denies {text}")
+
+                elif label in ("DRUG", "MEDICATION", "CHEMICAL"):
+                    medications.append(text)
+
+                elif label in ("PROCEDURE", "TEST", "TREATMENT"):
+                    procedures.append(text)
+
+                elif label in ("DIAGNOSIS", "FINDING"):
+                    if not is_negated and not is_uncertain:
+                        diagnoses.append(text)
+
+            # Fall through to regex for anything medspaCy misses
+            regex_base = self._extract_with_regex(transcript_text)
+
+            # Merge: deduplicate, prefer NLP results
+            def _merge(nlp_list, regex_list):
+                combined = list(nlp_list)
+                for item in regex_list:
+                    if item.lower() not in [c.lower() for c in combined]:
+                        combined.append(item)
+                return combined
+
+            regex_base["symptoms"] = _merge(symptoms, regex_base.get("symptoms", []))
+            regex_base["medications"] = _merge(medications, regex_base.get("medications", []))
+            regex_base["procedures"] = _merge(procedures, regex_base.get("procedures", []))
+            regex_base["diagnoses"] = _merge(diagnoses, regex_base.get("diagnoses", []))
+            regex_base["_source"] = "medspacy"
+
+            return regex_base
+
+        except Exception as e:
+            logger.warning(f"medspaCy extraction failed ({e}), falling back to regex")
+            return self._extract_with_regex(transcript_text)
+
+    def _extract_with_regex(self, transcript_text: str) -> Dict[str, Any]:
+        """Original regex-based extraction (fallback)."""
+
         # Split into sentences for granular processing
         sentences = self._split_into_sentences(transcript_text)
 

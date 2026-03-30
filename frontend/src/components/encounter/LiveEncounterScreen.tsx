@@ -87,9 +87,13 @@ export default function LiveEncounterScreen() {
   const encounterId = encounter?.id || '';
 
   const {
-    state: recState, segments,
+    state: recState, segments, isSupported: isSpeechSupported,
     startRecording, stopRecording, pauseRecording, resumeRecording,
-  } = useAudioRecorder({ encounterId, onError: (err) => setErrorMsg(err) });
+  } = useAudioRecorder({
+    encounterId,
+    language: ({ en:'en-US', es:'es-ES', fr:'fr-FR', pt:'pt-PT', ar:'ar-SA', zh:'zh-CN', hi:'hi-IN', sw:'sw-KE' }[formData.spoken_language] || 'en-US'),
+    onError: (err) => setErrorMsg(err),
+  });
 
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,8 +133,9 @@ export default function LiveEncounterScreen() {
     stopRecording();
     if (!encounter) return;
     setIsGenerating(true);
+    // Small delay to let the WebSocket 'stop' message flush before generating
+    await new Promise(r => setTimeout(r, 600));
     try {
-      await api.stopRecording(encounter.id);
       await api.generateNote(encounter.id);
       navigate(`/review/${encounter.id}`);
     } catch {
@@ -208,28 +213,32 @@ export default function LiveEncounterScreen() {
             </div>
           </div>
 
-          {/* Encounter Type */}
+          {/* Encounter Mode */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Encounter Type</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Encounter Mode</label>
             <div className="grid grid-cols-3 gap-2">
-              {[
+              {([
                 { value: 'regular', label: 'Regular Clerking', desc: 'Standard clinical encounter' },
-                { value: 'emergency', label: 'Emergency', desc: 'Emergency department encounter' },
-                { value: 'trauma', label: 'Trauma', desc: 'Trauma with primary/secondary survey' },
-              ].map((t) => (
+                { value: 'emergency', label: 'Emergency', desc: 'Emergency with ABCDE survey' },
+                { value: 'trauma', label: 'Trauma', desc: 'Primary & secondary survey' },
+              ] as const).map((mode) => (
                 <button
-                  key={t.value}
+                  key={mode.value}
                   type="button"
-                  onClick={() => setFormData(f => ({ ...f, encounter_type: t.value }))}
+                  onClick={() => setEncounterMode(mode.value)}
                   className={clsx(
-                    'p-3 rounded-xl border text-center transition-all text-sm',
-                    formData.encounter_type === t.value
-                      ? 'border-teal-500 bg-teal-50 text-teal-700 font-medium'
-                      : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                    'p-3 rounded-xl border-2 text-left transition-all',
+                    encounterMode === mode.value
+                      ? mode.value === 'regular' ? 'border-teal-500 bg-teal-50' : 'border-red-500 bg-red-50'
+                      : 'border-slate-200 hover:border-slate-300'
                   )}
                 >
-                  <p className="font-medium text-xs">{t.label}</p>
-                  <p className="text-[10px] mt-0.5 opacity-70">{t.desc}</p>
+                  <p className={clsx('text-xs font-semibold leading-tight',
+                    encounterMode === mode.value
+                      ? mode.value === 'regular' ? 'text-teal-700' : 'text-red-700'
+                      : 'text-slate-700'
+                  )}>{mode.label}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5 leading-tight line-clamp-2">{mode.desc}</p>
                 </button>
               ))}
             </div>
@@ -255,37 +264,6 @@ export default function LiveEncounterScreen() {
                   <option key={c} value={c}>{n}</option>
                 ))}
               </select>
-            </div>
-          </div>
-
-          {/* Encounter Mode */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Encounter Mode</label>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { value: 'regular', label: 'Regular Clerking', desc: 'Standard clinical encounter' },
-                { value: 'emergency', label: 'Emergency', desc: 'Emergency with ABCDE survey' },
-                { value: 'trauma', label: 'Trauma', desc: 'Trauma with primary & secondary survey' },
-              ] as const).map((mode) => (
-                <button
-                  key={mode.value}
-                  type="button"
-                  onClick={() => setEncounterMode(mode.value)}
-                  className={clsx(
-                    'p-3 rounded-xl border-2 text-left transition-all',
-                    encounterMode === mode.value
-                      ? mode.value === 'regular' ? 'border-teal-500 bg-teal-50' : 'border-red-500 bg-red-50'
-                      : 'border-slate-200 hover:border-slate-300'
-                  )}
-                >
-                  <p className={clsx('text-xs font-semibold',
-                    encounterMode === mode.value
-                      ? mode.value === 'regular' ? 'text-teal-700' : 'text-red-700'
-                      : 'text-slate-700'
-                  )}>{mode.label}</p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">{mode.desc}</p>
-                </button>
-              ))}
             </div>
           </div>
 
@@ -444,8 +422,18 @@ export default function LiveEncounterScreen() {
             {segments.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-slate-400 text-center px-4">
                 <Mic className="w-10 h-10 mb-3 opacity-40" />
-                <p className="text-sm">Tap &quot;Record&quot; to capture live audio</p>
-                <p className="text-xs mt-2">Or use &quot;Type Input&quot; to enter text manually</p>
+                {!isSpeechSupported ? (
+                  <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-left">
+                    <p className="text-xs font-medium text-amber-700">Browser not supported</p>
+                    <p className="text-xs text-amber-600 mt-1">Live recording requires Chrome or Edge. Please use the &quot;Type Input&quot; tab to paste your transcript manually.</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm">Tap &quot;Record&quot; to capture live audio</p>
+                    <p className="text-xs mt-2">Uses your browser&apos;s built-in speech recognition — no API key needed</p>
+                    <p className="text-xs mt-1 text-slate-300">Or use &quot;Type Input&quot; to enter text manually</p>
+                  </>
+                )}
               </div>
             ) : (
               segments.map((seg, i) => (

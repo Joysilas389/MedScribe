@@ -67,3 +67,20 @@ All notable changes to MedScribe will be documented in this file.
 
 ### Breaking Changes
 - N/A (initial release)
+
+## [1.4.0] — 2026-03-29
+
+### Changed — Web Speech API migration (no OpenAI key needed)
+- **useAudioRecorder.ts** — Rewritten to use browser Web Speech API (SpeechRecognition) instead of MediaRecorder + Whisper. Free, zero-latency, no API key. Works in Chrome and Edge.
+- **LiveEncounterScreen.tsx** — Shows amber warning when browser lacks Web Speech support, directs user to manual input. BCP-47 language codes correctly mapped.
+- **ws_routes.py** — WebSocket now receives JSON text (not binary audio). No server-side audio processing needed.
+
+### Added — medspaCy clinical NLP
+- **requirements.txt** — Added medspacy>=1.3.0 and spacy>=3.7.0.
+- **clinical_nlp.py** — medspaCy pipeline on startup: NER for medications/symptoms/procedures, ConText negation detection, merged with regex fallback.
+- **render_build.sh** — Backend build script: pip install + python -m spacy download en_core_web_sm.
+
+### Fixed (from v1.3.0)
+- **tailwind.config.js** — Added darkMode: 'class' (dark mode was never activating).
+- **SettingsPage.tsx** — Dark mode toggle replaced with animated pill switch, persists across reloads.
+- **LiveEncounterScreen.tsx** — Removed duplicate Encounter Type section. Trauma card text overflow fixed with line-clamp-2.

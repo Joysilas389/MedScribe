@@ -8,7 +8,13 @@
     <meta name="theme-color" content="#0d9488" />
     <link rel="manifest" href="/manifest.json" />
     <title>MedScribe</title>
-  </head>
+    <script>
+    (function() {
+      const t = localStorage.getItem('medscribe_theme');
+      if (t === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
+</head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
