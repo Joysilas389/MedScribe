@@ -167,11 +167,11 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown."""
             return polished
 
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse Claude response as JSON")
+            logger.error(f"Failed to parse Claude response as JSON: {content[:500]}")
             raise NotePolishError("AI returned an invalid response. Please try again.")
         except Exception as e:
-            logger.error(f"Note polishing error: {type(e).__name__}")
-            raise NotePolishError("AI processing failed. Please try again.")
+            logger.error(f"Note polishing error: {type(e).__name__}: {str(e)}")
+            raise NotePolishError(f"AI processing failed: {type(e).__name__} — {str(e)}")
 
     async def translate_note(
         self,

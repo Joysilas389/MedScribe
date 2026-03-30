@@ -37,8 +37,8 @@ class AppConfig(BaseSettings):
 
     # --- Anthropic Claude API ---
     anthropic_api_key: str = Field(default="", description="Anthropic API key for Claude")
-    claude_model: str = "claude-sonnet-4-20250514"
-    claude_max_tokens: int = 4096
+    claude_model: str = "claude-sonnet-4-5"
+    claude_max_tokens: int = 16000
 
     # --- Transcription ---
     transcription_api_url: str = ""

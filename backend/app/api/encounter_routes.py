@@ -358,7 +358,8 @@ async def generate_note(
             encounter_type=getattr(encounter, 'encounter_type', 'regular') or 'regular',
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI processing failed: {str(e)}")
+        logger.error(f"Note generation failed for encounter {encounter_id}: {type(e).__name__}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Note generation failed: {str(e)}")
 
     # Safety validation
     validation = safety_validator.validate(polished, transcript_text, entities)
